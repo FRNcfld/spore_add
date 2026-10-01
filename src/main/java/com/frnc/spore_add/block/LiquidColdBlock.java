@@ -2,6 +2,7 @@ package com.frnc.spore_add.block;
 
 import java.util.function.Supplier;
 
+import com.frnc.spore_add.SporeAddConfig;
 import com.frnc.spore_add.effect.ColdEffects;
 import com.frnc.spore_add.effect.FrostbiteLevels;
 import com.frnc.spore_add.world.FrozenChunks;
@@ -25,16 +26,17 @@ import net.minecraft.world.level.material.FlowingFluid;
  *
  * <ol>
  *   <li><b>泡在里面会失温</b>——和细雪一样，只靠 {@code setIsInPowderSnow(true)}（见 {@code CoolantBlock} 的说明）；</li>
- *   <li><b>区域寒冷效果</b>——以每个源头方块为中心、<b>半径 6 的球形</b>范围内的生物持续受到寒冷效果
+ *   <li><b>区域寒冷效果</b>——以每个源头方块为中心、<b>球形</b>范围内的生物持续受到寒冷效果
  *       （细雪式冻结 + 无上限冻伤）。<b>注意它不由本类施加</b>：那必须在实体自己的 tick 里做，
- *       见 {@code ColdEffects} 的类注释与 {@code ModEvents#onLivingTick}；本类只负责把范围的登记
+ *       见 {@code ColdEffects} 的类注释与 {@code LiquidColdRangeMixin}；本类只负责把范围的登记
  *       （{@link FrozenChunks}）维护好。</li>
- *   <li><b>冰扩散</b>——放下时立刻冻住接触到的空气与流体，之后每秒在<b>同一个半径 6 的球形</b>内随机尝试替换；</li>
+ *   <li><b>冰扩散</b>——放下时立刻冻住接触到的空气与流体，之后每秒在<b>同一个球形</b>内随机尝试替换；</li>
  *   <li><b>维持"影响范围"登记</b>——范围判定与"范围内的原版冰不融化"都靠它（{@code IceMeltMixin}）。</li>
  * </ol>
  *
- * <p><b>区域效果与冰扩散共用同一个范围和同一个半径</b>（{@link #RADIUS}），所以"能看到冰的地方"与
- * "会被冻的地方"始终是同一片区域，改半径只需改这一个常量。
+ * <p><b>区域效果与冰扩散共用同一个范围和同一个半径</b>，所以"能看到冰的地方"与"会被冻的地方"
+ * 始终是同一片区域。半径来自 {@link SporeAddConfig#liquidColdRadius()}——本类与 {@link FrozenChunks}
+ * 都读同一个值，不存在"两处常量要记得一起改"的问题。
  *
  * <h2>为什么用调度刻而不是 randomTick</h2>
  * 原版的 {@code randomTick} 时机不可控（每区块每 tick 只随机挑几个方块），做不了"稳定推进"。
@@ -46,13 +48,9 @@ import net.minecraft.world.level.material.FlowingFluid;
  */
 public class LiquidColdBlock extends LiquidBlock {
 
-    /**
-     * 影响半径（格）。区域寒冷效果与冰扩散共用。
-     *
-     * <p>是<b>球形</b>而不是立方体：范围判定按欧氏距离（见 {@code FrozenChunks#isWithinRange}），
-     * 冰分层也按同一套距离（见 {@link #iceFor}）。
-     */
-    private static final int RADIUS = 6;
+    // 影响半径不在这里——它来自 SporeAddConfig#liquidColdRadius()，本类与 FrozenChunks 共用同一个值。
+    // 是球形而不是立方体：范围判定按欧氏距离（见 FrozenChunks#isWithinRange），冰分层也按同一套距离
+    // （见 #iceFor）。
 
     /** 每个源头方块每秒的扩散尝试次数。 */
     private static final int ATTEMPTS_PER_SECOND = 16;
@@ -132,19 +130,21 @@ public class LiquidColdBlock extends LiquidBlock {
     }
 
     /**
-     * 一轮扩散：在半径 {@link #RADIUS} 的球形内随机取点尝试替换。
+     * 一轮扩散：在影响半径的球形内随机取点尝试替换。
      *
      * <p>"空气替换最快、其次流体、最后方块"是刻意用<b>自然结果</b>实现的——三类成功概率都是
      * 你定的 50%，而空气最容易被探到、也最不阻挡，于是实际最先被换掉。若要硬性优先级
      * （例如空气 70% / 流体 50% / 方块 30%），只需在这里按类别给不同的概率。
      */
     private static void spreadIce(ServerLevel level, BlockPos center, RandomSource random) {
+        // 一次读出来用整轮：半径配置中途被改的话，至少这一轮用的是同一个值
+        int radius = SporeAddConfig.liquidColdRadius();
         for (int attempt = 0; attempt < ATTEMPTS_PER_SECOND; attempt++) {
-            int dx = random.nextInt(RADIUS * 2 + 1) - RADIUS;
-            int dy = random.nextInt(RADIUS * 2 + 1) - RADIUS;
-            int dz = random.nextInt(RADIUS * 2 + 1) - RADIUS;
+            int dx = random.nextInt(radius * 2 + 1) - radius;
+            int dy = random.nextInt(radius * 2 + 1) - radius;
+            int dz = random.nextInt(radius * 2 + 1) - radius;
             double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-            if (distance > RADIUS) {
+            if (distance > radius) {
                 continue;   // 落在立方体的角上，球外
             }
             BlockPos target = center.offset(dx, dy, dz);
@@ -157,7 +157,7 @@ public class LiquidColdBlock extends LiquidBlock {
             if (random.nextDouble() >= SUCCESS_CHANCE) {
                 continue;
             }
-            level.setBlock(target, iceFor(distance), REPLACE_FLAGS);
+            level.setBlock(target, iceFor(distance, radius), REPLACE_FLAGS);
         }
     }
 
@@ -167,11 +167,11 @@ public class LiquidColdBlock extends LiquidBlock {
      * <p>注意最外层是原版 {@code minecraft:ice}——三种冰里<b>只有它会融化</b>（方块光照 ≥ 11 化成水），
      * 所以这一层正是 {@code IceMeltMixin} 要保住的对象。浮冰与蓝冰本来就不融。
      */
-    private static BlockState iceFor(double distance) {
-        if (distance * 3 <= RADIUS) {
+    private static BlockState iceFor(double distance, int radius) {
+        if (distance * 3 <= radius) {
             return Blocks.BLUE_ICE.defaultBlockState();
         }
-        if (distance * 3 <= RADIUS * 2) {
+        if (distance * 3 <= radius * 2) {
             return Blocks.PACKED_ICE.defaultBlockState();
         }
         return Blocks.ICE.defaultBlockState();

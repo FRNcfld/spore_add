@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "spore_add:item/frost_nova_pulling_1"
+  }
+}

@@ -1,0 +1,41 @@
+本工程 assets/spore_add/textures/particle/ 下的以下 3 个粒子贴图不是原创，来自第三方 MIT 许可的素材库：
+
+（本说明文件放在 META-INF/ 而不是贴图旁边：资源包加载器会扫描 textures/ 下的每一个文件，
+不认识非图片的文件，会报 "Invalid path in pack" 的 ERROR。放在这里既能随 jar 分发，
+又不进入任何资源扫描路径。）
+
+
+    frost_mist.png
+    frost_snowflake.png
+    frost_shard.png
+
+素材库：Iron-Elden-Ring-Particle-library（「Iron 的法术与魔法书：艾尔登法环」粒子库）
+仓库：  https://github.com/shuimo0413/Iron-Elden-Ring-Particle-library
+版权：  Copyright (c) 2026 shuimo0413
+许可：  MIT License（全文见下）
+
+按 MIT 的要求，下列版权声明与许可声明随这些副本一并保留。
+本工程自身的代码以工程根目录的 LICENSE 为准。
+
+--------------------------------------------------------------------------------
+MIT License
+
+Copyright (c) 2026 shuimo0413
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

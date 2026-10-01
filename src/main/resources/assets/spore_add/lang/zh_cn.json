@@ -8,6 +8,7 @@
   "item.spore_add.coolant_bucket": "冷却液桶",
   "item.spore_add.liquid_cold_bucket": "液态寒冷桶",
   "item.spore_add.high_energy_fuel_bucket": "高能燃料桶",
+  "item.spore_add.frost_nova": "冰霜新星",
 
   "advancements.spore_add.absolute_zero.title": "绝对零度",
   "advancements.spore_add.absolute_zero.description": "取得液态寒冷",
@@ -20,5 +21,10 @@
   "effect.spore_add.deflagration": "爆燃",
   "effect.spore_add.deflagration.description": "每层都会放大你受到的火焰伤害",
 
-  "effect.spore_add.level_suffix": "%s 层"
+  "effect.spore_add.level_suffix": "%s 层",
+
+  "subtitles.spore_add.frost_nova_launch": "冰霜新星已发射",
+  "subtitles.spore_add.frost_nova_charging": "冰霜新星已就绪",
+  "subtitles.spore_add.frost_nova_imminent": "冰霜新星即将爆发",
+  "subtitles.spore_add.frost_nova_secondary": "冰霜新星已爆发"
 }

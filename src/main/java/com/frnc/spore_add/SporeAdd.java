@@ -4,10 +4,13 @@ import com.frnc.spore_add.advancement.ModTriggers;
 import com.frnc.spore_add.block.ModBlocks;
 import com.frnc.spore_add.effect.ModEffects;
 import com.frnc.spore_add.enchantment.ModEnchantments;
+import com.frnc.spore_add.entity.ModEntities;
 import com.frnc.spore_add.fluid.ModFluids;
 import com.frnc.spore_add.item.ModCreativeTabs;
 import com.frnc.spore_add.item.ModItems;
 import com.frnc.spore_add.network.ModNetwork;
+import com.frnc.spore_add.particle.ModParticles;
+import com.frnc.spore_add.sound.ModSounds;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceLocation;
@@ -16,6 +19,7 @@ import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
@@ -33,15 +37,19 @@ import org.slf4j.Logger;
  *   <li><b>高能燃料 → 可燃 → 爆燃</b> 这条机制链：泡在燃料里会积累 Spore 的「可燃」，可燃被触发时
  *       转化为本 mod 的「爆燃」buff 并逐次累加层数，每层放大火焰伤害。入口在 {@code ModEvents}，
  *       两个等级（可燃与爆燃）的存取见 {@code BuffLevels}。</li>
+ *   <li><b>「冰霜新星」</b>：长按右键蓄力、松手发射一枚无重力直线飞行的弹体，落点处把球内的方块
+ *       换成蓝冰/浮冰、给球内的生物叠冻伤。物品见 {@code FrostNovaItem}，实体见 {@code FrostNovaEntity}，
+ *       爆发见 {@code FrostNovaBlast}。</li>
+ *   <li><b>可配置项</b>：冰霜新星的四个威力参数与液态寒冷的影响半径都在
+ *       {@code config/spore_add-common.toml} 里，见 {@link SporeAddConfig}。</li>
  * </ul>
  * 其余玩法尚未实现。后续约定：
  * <ul>
  *   <li>方块 / 物品 / 实体等注册：在本类里建 {@code DeferredRegister}，在构造函数中
- *       {@code register(modEventBus)}；内容分别放到 {@code block} / {@code item} 等子包。</li>
+ *       {@code register(modEventBus)}；内容分别放到 {@code block} / {@code item} / {@code entity}
+ *       等子包。</li>
  *   <li>游戏事件：{@code MinecraftForge.EVENT_BUS.register(this)} 已就绪，需要时在本类或子包里
  *       用 {@code @SubscribeEvent} 补监听方法。</li>
- *   <li>服务端 / 世界机制的可调项：接入 Forge 配置（COMMON 类型），生成
- *       {@code config/spore_add-common.toml}。</li>
  *   <li>需要改写原版行为时走 mixin：把类加进 {@code spore_add.mixins.json} 的 {@code mixins} 列表
  *       （构建脚本里的 MixinGradle 管线已经接好）。</li>
  * </ul>
@@ -67,6 +75,10 @@ public class SporeAdd {
         // 模组加载期的初始化（注册表已可用，但世界尚未创建）
         modEventBus.addListener(this::commonSetup);
 
+        // 配置：必须在这里注册。注册之后 Forge 会在模组加载期读文件（生成默认值），
+        // 而所有取值都发生在游戏运行期，所以不存在"配置还没读就取值"的问题。
+        context.registerConfig(ModConfig.Type.COMMON, SporeAddConfig.SPEC);
+
         // 各部分内容各自的注册表。顺序其实无所谓（详见 ModFluids 里关于静态初始化顺序的说明），
         // 但把流体放在最前面更贴合阅读顺序：方块和桶都要引用流体的注册项。
         ModFluids.register(modEventBus);
@@ -74,6 +86,9 @@ public class SporeAdd {
         ModItems.register(modEventBus);
         ModEffects.register(modEventBus);
         ModEnchantments.register(modEventBus);
+        ModParticles.register(modEventBus);
+        ModSounds.register(modEventBus);
+        ModEntities.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
 
         // 注册网络包。必须早于任何一次发包，放构造里最省心。

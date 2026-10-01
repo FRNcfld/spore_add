@@ -1,0 +1,46 @@
+{
+  "frost_nova_launch": {
+    "subtitle": "subtitles.spore_add.frost_nova_launch",
+    "sounds": [
+      "minecraft:random/bow"
+    ]
+  },
+  "frost_nova_charging": {
+    "subtitle": "subtitles.spore_add.frost_nova_charging",
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/shimmer",
+        "volume": 0.2
+      }
+    ]
+  },
+  "frost_nova_imminent": {
+    "subtitle": "subtitles.spore_add.frost_nova_imminent",
+    "sounds": [
+      {
+        "name": "minecraft:block/amethyst/resonate1",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "minecraft:block/amethyst/resonate2",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "minecraft:block/amethyst/resonate3",
+        "attenuation_distance": 48
+      },
+      {
+        "name": "minecraft:block/amethyst/resonate4",
+        "attenuation_distance": 48
+      }
+    ]
+  },
+  "frost_nova_secondary": {
+    "subtitle": "subtitles.spore_add.frost_nova_secondary",
+    "sounds": [
+      "minecraft:random/glass1",
+      "minecraft:random/glass2",
+      "minecraft:random/glass3"
+    ]
+  }
+}

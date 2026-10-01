@@ -8,6 +8,7 @@
   "item.spore_add.coolant_bucket": "Coolant Bucket",
   "item.spore_add.liquid_cold_bucket": "Liquid Cold Bucket",
   "item.spore_add.high_energy_fuel_bucket": "High-Energy Fuel Bucket",
+  "item.spore_add.frost_nova": "Frost Nova",
 
   "advancements.spore_add.absolute_zero.title": "Absolute Zero",
   "advancements.spore_add.absolute_zero.description": "Obtain Liquid Cold",
@@ -20,5 +21,10 @@
   "effect.spore_add.deflagration": "Deflagration",
   "effect.spore_add.deflagration.description": "Each stack increases the fire damage you take",
 
-  "effect.spore_add.level_suffix": "%s"
+  "effect.spore_add.level_suffix": "%s",
+
+  "subtitles.spore_add.frost_nova_launch": "Frost Nova launched",
+  "subtitles.spore_add.frost_nova_charging": "Frost Nova ready",
+  "subtitles.spore_add.frost_nova_imminent": "Frost Nova about to detonate",
+  "subtitles.spore_add.frost_nova_secondary": "Frost Nova detonated"
 }

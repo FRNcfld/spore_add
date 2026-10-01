@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.frnc.spore_add.SporeAddConfig;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
@@ -15,7 +17,7 @@ import net.minecraft.world.level.Level;
  * <ul>
  *   <li>{@link #isMarked} —— 区块粒度的粗筛，给"影响范围内的冰不融化"用（{@code IceMeltMixin}）；</li>
  *   <li>{@link #isWithinRange} —— 精确到半径的判定，给"影响范围内施加寒冷效果"用
- *       （{@code ModEvents#onLivingTick}）。</li>
+ *       （{@code LiquidColdRangeMixin} 注入 {@code LivingEntity#aiStep} 时查）。</li>
  * </ul>
  *
  * <h2>为什么不用 SavedData 持久化</h2>
@@ -32,14 +34,17 @@ import net.minecraft.world.level.Level;
  * </ol>
  * 冰不融化那一侧只用第 1 步（区块粒度），因为原版冰是随机刻、一次可能同时点到几十块，
  * 逐块算距离代价太大；代价是同一区块内略远的冰也会被保护，偏差方向是"倾向让冰保持冻结"。
+ *
+ * <h2>半径来自配置，且必须与冰扩散用同一个</h2>
+ * 本类的半径取自 {@link SporeAddConfig#liquidColdRadius()}，与 {@code LiquidColdBlock} 是<b>同一个来源</b>。
+ * 这一点是硬要求：{@link #mark} 按半径决定登记哪些区块，而 {@link #isWithinRange} 按半径算距离上限，
+ * 两者若不一致，登记范围偏小就会让粗筛漏掉本该在球内的位置、外圈的寒冷效果整片失效。
+ * 两处都是<b>调用时</b>读配置，所以运行时改半径最多有一个登记周期（{@link #TTL_TICKS}）的过渡，之后自洽。
  */
 public final class FrozenChunks {
 
     /** 登记有效期（tick）。源头每秒刷新一次，2 秒足够宽松。 */
     private static final int TTL_TICKS = 40;
-
-    /** 与液态寒冷的影响半径保持一致（见 {@code LiquidColdBlock#RADIUS}）。 */
-    private static final int RADIUS = 6;
 
     /** 条目数超过它就顺手清一次过期项，避免长期游玩后映射无限增长。 */
     private static final int PRUNE_THRESHOLD = 4096;
@@ -69,10 +74,11 @@ public final class FrozenChunks {
         }
 
         long packedSource = source.asLong();
-        int minX = (source.getX() - RADIUS) >> 4;
-        int maxX = (source.getX() + RADIUS) >> 4;
-        int minZ = (source.getZ() - RADIUS) >> 4;
-        int maxZ = (source.getZ() + RADIUS) >> 4;
+        int radius = SporeAddConfig.liquidColdRadius();
+        int minX = (source.getX() - radius) >> 4;
+        int maxX = (source.getX() + radius) >> 4;
+        int minZ = (source.getZ() - radius) >> 4;
+        int maxZ = (source.getZ() + radius) >> 4;
         for (int chunkX = minX; chunkX <= maxX; chunkX++) {
             for (int chunkZ = minZ; chunkZ <= maxZ; chunkZ++) {
                 long key = ChunkPos.asLong(chunkX, chunkZ);
@@ -107,12 +113,17 @@ public final class FrozenChunks {
             return false;
         }
         long now = level.getGameTime();
-        int limit = RADIUS * RADIUS;
+        int radius = SporeAddConfig.liquidColdRadius();
+        int limit = radius * radius;
         int chunkX = pos.getX() >> 4;
         int chunkZ = pos.getZ() >> 4;
-        // 只看该位置周围 3×3 个区块里登记的源头，不必扫全世界的源头
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
+        // 只看该位置周围有可能会命中的那几个区块，不必扫全世界的源头。
+        // 这个跨度必须由半径算出来，不能写死 1：半径超过一个区块宽时，能触及本位置的源头
+        // 可能落在 2 个区块外，写死 ±1 就会漏判——而那正是"能看到冰的地方 = 会被冻的地方"
+        // 这条不变量被打破的地方（登记还在、精判却永远为假）。半径 ≤ 16 时它算出 1，与原来一致。
+        int span = (radius + 15) >> 4;
+        for (int dx = -span; dx <= span; dx++) {
+            for (int dz = -span; dz <= span; dz++) {
                 Map<Long, Long> inChunk = sources.get(ChunkPos.asLong(chunkX + dx, chunkZ + dz));
                 if (inChunk == null) {
                     continue;

@@ -17,7 +17,9 @@ import net.minecraft.world.entity.LivingEntity;
  * 表现是：区域内冻伤照常叠（那个只依赖 addEffect，与 tick 顺序无关），但细雪冻结完全不积累
  * （没有屏幕冻结遮罩，只有冻伤减速带来的 FOV 变化）。
  *
- * <p>所以区域效果改由 {@code ModEvents#onLivingTick} 在实体自己的 tick 里调用本方法；
+ * <p>所以区域效果改由 {@code LiquidColdRangeMixin} 在实体自己的 tick 里调用本方法——它注入的是
+ * {@code LivingEntity#aiStep} 的开头，那个位置落在 {@code baseTick} 清标志<b>之后</b>、冻结判断<b>之前</b>；
+ * 为什么非得是 mixin 而不能用 Forge 事件，见那个类里画出的 tick 顺序。
  * 接触那两条路走 {@code entityInside}，本来就发生在实体自己的 tick 内，没有这个问题。
  */
 public final class ColdEffects {

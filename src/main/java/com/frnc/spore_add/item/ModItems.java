@@ -13,11 +13,13 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * 本 mod 的物品注册表。目前只有三种流体的桶。
+ * 本 mod 的物品注册表：三种流体的桶，以及「冰霜新星」。
  *
  * <p>三个桶的物品属性与原版水桶逐项一致（{@code craftRemainder(Items.BUCKET)} + {@code stacksTo(1)}）：
  * 用掉之后退还一个空桶，且不可堆叠——后者不只是习惯，{@code BucketItem} 倒液体时要修改手上这一格，
  * 可堆叠的话逻辑会不正确。
+ *
+ * <p>「冰霜新星」与它们性质完全不同（不是桶、要蓄力），所以不复用下面那个 {@link #bucket} 辅助方法。
  */
 public final class ModItems {
 
@@ -42,6 +44,15 @@ public final class ModItems {
     /** 高能燃料桶。 */
     public static final RegistryObject<Item> HIGH_ENERGY_FUEL_BUCKET =
             ITEMS.register("high_energy_fuel_bucket", () -> bucket(ModFluids.HIGH_ENERGY_FUEL));
+
+    /**
+     * 冰霜新星。
+     *
+     * <p>可堆叠到 16（与雪球、末影珍珠同族），每次发射消耗 1 个——蓄力与可堆叠并不冲突，
+     * 蓄力状态记在玩家身上（{@code startUsingItem}），不在物品栈上。
+     */
+    public static final RegistryObject<Item> FROST_NOVA =
+            ITEMS.register("frost_nova", () -> new FrostNovaItem(new Item.Properties().stacksTo(16)));
 
     /**
      * 按原版水桶的属性造一个桶。
