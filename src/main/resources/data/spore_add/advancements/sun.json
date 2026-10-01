@@ -1,0 +1,28 @@
+{
+  "parent": "spore_add:absolute_zero",
+  "criteria": {
+    "warmth_equipped": {
+      "trigger": "spore_add:warmth_equipped"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "description": {
+      "translate": "advancements.spore_add.sun.description"
+    },
+    "frame": "goal",
+    "hidden": false,
+    "icon": {
+      "item": "minecraft:sunflower"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.spore_add.sun.title"
+    }
+  },
+  "requirements": [
+    [
+      "warmth_equipped"
+    ]
+  ]
+}

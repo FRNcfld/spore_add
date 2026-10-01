@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "spore_add:item/liquid_cold_bucket"
+  }
+}

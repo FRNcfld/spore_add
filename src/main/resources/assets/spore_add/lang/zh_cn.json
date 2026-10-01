@@ -1,0 +1,24 @@
+{
+  "itemGroup.spore_add": "Spore Add",
+
+  "block.spore_add.coolant": "冷却液",
+  "block.spore_add.liquid_cold": "液态寒冷",
+  "block.spore_add.high_energy_fuel": "高能燃料",
+
+  "item.spore_add.coolant_bucket": "冷却液桶",
+  "item.spore_add.liquid_cold_bucket": "液态寒冷桶",
+  "item.spore_add.high_energy_fuel_bucket": "高能燃料桶",
+
+  "advancements.spore_add.absolute_zero.title": "绝对零度",
+  "advancements.spore_add.absolute_zero.description": "取得液态寒冷",
+
+  "advancements.spore_add.sun.title": "永恒炽阳",
+  "advancements.spore_add.sun.description": "装备一件附有「烈阳」的护甲",
+
+  "enchantment.spore_add.warmth": "烈阳",
+
+  "effect.spore_add.deflagration": "爆燃",
+  "effect.spore_add.deflagration.description": "每层都会放大你受到的火焰伤害",
+
+  "effect.spore_add.level_suffix": "%s 层"
+}

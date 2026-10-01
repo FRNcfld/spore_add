@@ -1,0 +1,24 @@
+{
+  "itemGroup.spore_add": "Spore Add",
+
+  "block.spore_add.coolant": "Coolant",
+  "block.spore_add.liquid_cold": "Liquid Cold",
+  "block.spore_add.high_energy_fuel": "High-Energy Fuel",
+
+  "item.spore_add.coolant_bucket": "Coolant Bucket",
+  "item.spore_add.liquid_cold_bucket": "Liquid Cold Bucket",
+  "item.spore_add.high_energy_fuel_bucket": "High-Energy Fuel Bucket",
+
+  "advancements.spore_add.absolute_zero.title": "Absolute Zero",
+  "advancements.spore_add.absolute_zero.description": "Obtain Liquid Cold",
+
+  "advancements.spore_add.sun.title": "Eternal Blazing Sun",
+  "advancements.spore_add.sun.description": "Equip a piece of armor enchanted with Blazing Sun",
+
+  "enchantment.spore_add.warmth": "Blazing Sun",
+
+  "effect.spore_add.deflagration": "Deflagration",
+  "effect.spore_add.deflagration.description": "Each stack increases the fire damage you take",
+
+  "effect.spore_add.level_suffix": "%s"
+}

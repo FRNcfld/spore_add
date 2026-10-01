@@ -1,0 +1,37 @@
+{
+  "criteria": {
+    "liquid_cold_bucket": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "spore_add:liquid_cold_bucket"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": true,
+    "background": "spore_add:textures/gui/advancements/backgrounds/ice.png",
+    "description": {
+      "translate": "advancements.spore_add.absolute_zero.description"
+    },
+    "frame": "task",
+    "hidden": false,
+    "icon": {
+      "item": "spore_add:liquid_cold_bucket"
+    },
+    "show_toast": true,
+    "title": {
+      "translate": "advancements.spore_add.absolute_zero.title"
+    }
+  },
+  "requirements": [
+    [
+      "liquid_cold_bucket"
+    ]
+  ]
+}

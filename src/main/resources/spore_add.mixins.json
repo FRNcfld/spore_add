@@ -1,0 +1,23 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "com.frnc.spore_add.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "spore_add.refmap.json",
+  "mixins": [
+    "TarIgnitableMixin",
+    "IceMeltMixin",
+    "FrostbiteAllMobsMixin",
+    "WarmthFreezeMixin",
+    "WarmthPowderSnowMixin",
+    "LiquidColdRangeMixin"
+  ],
+  "client": [
+    "IgnitableEffectMixin",
+    "FrostbiteEffectMixin",
+    "EffectNameLevelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
