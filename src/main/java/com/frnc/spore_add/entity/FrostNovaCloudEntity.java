@@ -53,14 +53,24 @@ public class FrostNovaCloudEntity extends Entity {
     /** 每 tick 撒的雪花的粒子数。只是点缀，不必多。 */
     private static final int SNOWFLAKE_PER_TICK = 4;
 
+    /** 这团雾的球半径。客户端靠它决定粒子撒在哪，所以必须同步。 */
     private static final EntityDataAccessor<Float> DATA_RADIUS =
             SynchedEntityData.defineId(FrostNovaCloudEntity.class, EntityDataSerializers.FLOAT);
 
-    /** 总存活 tick 数。客户端靠 {@code tickCount} 与它对比来算淡出进度。 */
-    private static final EntityDataAccessor<Integer> DATA_LIFETIME =
-            SynchedEntityData.defineId(FrostNovaCloudEntity.class, EntityDataSerializers.INT);
+    /**
+     * 到期时刻（绝对游戏时间）。
+     *
+     * <p>只在服务端有意义——客户端不需要知道这团雾还能活多久，服务端到期 {@code discard} 之后
+     * 客户端跟着收移除包就行。所以它不进同步数据，只进存档。
+     *
+     * <p><b>为什么用绝对游戏时间而不是 tickCount：</b>{@code tickCount} 不存盘，区块卸载再加载会
+     * 从 0 重来，配置里的时长就不作数了（重进世界、或反复走出加载范围，云会活得比配置的更久）。
+     * 这与 {@link FrostNovaIceCoreEntity}、{@link FrostNovaEntity} 是同一类坑。
+     * 这里的时长是可配置的、最长能配到 600 秒，偏差因此更容易撞上。
+     */
+    private long expiresAtGameTime;
 
-    /** 冻伤的持续 tick 数。只在服务端用，所以不进同步数据，只进存档。 */
+    /** 冻伤的持续 tick 数。同样只在服务端用，只进存档。 */
     private int frostbiteDurationTicks = 200;
 
     /** 冻伤的 amplifier（= 显示层数 - 1）。同上。 */
@@ -87,7 +97,8 @@ public class FrostNovaCloudEntity extends Entity {
         this(ModEntities.FROST_NOVA_CLOUD.get(), level);
         setPos(center.x, center.y, center.z);
         setRadius(radius);
-        entityData.set(DATA_LIFETIME, lifetimeTicks);
+        // 记"什么时候散"，不是"还能活多久"，原因见 expiresAtGameTime
+        this.expiresAtGameTime = level.getGameTime() + lifetimeTicks;
         this.frostbiteDurationTicks = frostbiteDurationTicks;
         this.frostbiteAmplifier = frostbiteAmplifier;
     }
@@ -95,7 +106,6 @@ public class FrostNovaCloudEntity extends Entity {
     @Override
     protected void defineSynchedData() {
         entityData.define(DATA_RADIUS, 1.0F);
-        entityData.define(DATA_LIFETIME, 200);
     }
 
     public float getRadius() {
@@ -111,15 +121,18 @@ public class FrostNovaCloudEntity extends Entity {
     public void tick() {
         super.tick();
 
-        int lifetime = entityData.get(DATA_LIFETIME);
-        if (tickCount >= lifetime) {
+        // 寿命只在服务端判。客户端那份实例走的是注册表构造器，expiresAtGameTime 一直是 0，
+        // 两侧都判的话客户端会在第一帧就把自己删掉、云直接看不见。
+        // 客户端也不需要知道寿命：服务端到期 discard，客户端跟着收移除包。
+        if (level().isClientSide()) {
+            emitParticles();
+            return;
+        }
+        if (level().getGameTime() >= expiresAtGameTime) {
             discard();
             return;
         }
-
-        if (level().isClientSide()) {
-            emitParticles();
-        } else if (tickCount % FROSTBITE_INTERVAL_TICKS == 0) {
+        if (tickCount % FROSTBITE_INTERVAL_TICKS == 0) {
             applyFrostbite();
         }
     }
@@ -197,7 +210,7 @@ public class FrostNovaCloudEntity extends Entity {
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putFloat("Radius", getRadius());
-        tag.putInt("Lifetime", entityData.get(DATA_LIFETIME));
+        tag.putLong("ExpiresAt", expiresAtGameTime);
         tag.putInt("FrostbiteDuration", frostbiteDurationTicks);
         tag.putInt("FrostbiteAmplifier", frostbiteAmplifier);
     }
@@ -205,7 +218,7 @@ public class FrostNovaCloudEntity extends Entity {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         setRadius(tag.getFloat("Radius"));
-        entityData.set(DATA_LIFETIME, tag.getInt("Lifetime"));
+        expiresAtGameTime = tag.getLong("ExpiresAt");
         frostbiteDurationTicks = tag.getInt("FrostbiteDuration");
         frostbiteAmplifier = tag.getInt("FrostbiteAmplifier");
     }

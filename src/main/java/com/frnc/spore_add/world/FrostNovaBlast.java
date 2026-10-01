@@ -89,14 +89,6 @@ public final class FrostNovaBlast {
      */
     private static final double RADIUS_SLACK = 0.25D;
 
-    /**
-     * 一次爆炸那团霜雾的存活时长：200 tick = 10 秒。
-     *
-     * <p>只有一次爆炸用这个常量；二次爆炸的雾更长（配置项 {@code secondaryCloudSeconds}，默认 20 秒），
-     * 因为它范围更大、留久一点才撑得住。
-     */
-    private static final int PRIMARY_CLOUD_LIFETIME_TICKS = 200;
-
     /** 一次爆炸命中瞬间撒的冰屑数量。 */
     private static final int BURST_PARTICLES = 40;
 
@@ -144,7 +136,8 @@ public final class FrostNovaBlast {
         // 放在 freezeBlocks 之后无所谓——冻结只碰换方块半径内的方块，而冰不是真菌方块。
         FungalClearing.clear(server, center, effectRadius);
         frostbiteInRadius(server, centerVec, effectRadius, durationTicks, amplifier);
-        spawnCloud(server, centerVec, effectRadius, PRIMARY_CLOUD_LIFETIME_TICKS, durationTicks, amplifier);
+        spawnCloud(server, centerVec, effectRadius, SporeAddConfig.frostNovaPrimaryCloudTicks(),
+                durationTicks, amplifier);
         spawnIceCore(server, centerVec, power);
         burstParticles(server, centerVec,
                 SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaBlockRadius(), power) * 0.6D,
@@ -314,9 +307,9 @@ public final class FrostNovaBlast {
     /**
      * 铺一团霜雾。
      *
-     * @param lifetimeTicks 这团雾存在多久，与"雾里冻伤持续多久"是两回事：
-     *                      一次爆炸用 {@link #PRIMARY_CLOUD_LIFETIME_TICKS}，
-     *                      二次爆炸用配置的 {@code secondaryCloudSeconds}
+     * @param lifetimeTicks 这团雾存在多久，与"雾里冻伤持续多久"是两回事。
+     *                      两个爆炸阶段各自的时长都来自配置：
+     *                      一次用 {@code primaryCloudSeconds}，二次用 {@code secondaryCloudSeconds}
      */
     private static void spawnCloud(ServerLevel level, Vec3 center, float radius, int lifetimeTicks,
                                    int durationTicks, int amplifier) {

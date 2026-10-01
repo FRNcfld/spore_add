@@ -94,6 +94,11 @@ public final class SporeAddConfig {
         return FROST_NOVA.autoDetonateSeconds.get() * 20;
     }
 
+    /** 一次爆炸那团霜雾的持续 tick 数。 */
+    public static int frostNovaPrimaryCloudTicks() {
+        return FROST_NOVA.primaryCloudSeconds.get() * 20;
+    }
+
     /** 二次爆炸的冰雾持续 tick 数。 */
     public static int frostNovaSecondaryCloudTicks() {
         return FROST_NOVA.secondaryCloudSeconds.get() * 20;
@@ -180,6 +185,7 @@ public final class SporeAddConfig {
         private final ForgeConfigSpec.IntValue minChargeTicks;
         private final ForgeConfigSpec.IntValue autoDetonateSeconds;
         private final ForgeConfigSpec.IntValue secondaryDelaySeconds;
+        private final ForgeConfigSpec.IntValue primaryCloudSeconds;
         private final ForgeConfigSpec.IntValue secondaryCloudSeconds;
         private final ForgeConfigSpec.DoubleValue secondaryRangeMultiplier;
         private final ForgeConfigSpec.DoubleValue secondaryPowerMultiplier;
@@ -238,6 +244,11 @@ public final class SporeAddConfig {
                     .comment("首次爆炸后，冰球变成的延时炸弹在多少秒后二次引爆。1 ~ 600。",
                             "二次引爆会把那批冰清掉（变成空气），所以地表不会永久留着一个冰球。")
                     .defineInRange("secondaryDelaySeconds", 20, 1, 600);
+
+            this.primaryCloudSeconds = builder
+                    .comment("一次爆炸那团霜雾持续多少秒。1 ~ 600。",
+                            "注意它和雾里冻伤的持续时间是两回事：冻伤时长由 frostbiteSeconds 决定。")
+                    .defineInRange("primaryCloudSeconds", 10, 1, 600);
 
             this.secondaryCloudSeconds = builder
                     .comment("二次爆炸的冰雾持续多少秒。1 ~ 600。默认 20，比一次爆炸的 10 秒更长——",
