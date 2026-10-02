@@ -27,6 +27,20 @@ import net.minecraftforge.registries.RegistryObject;
  * （{@code Sound} 的构造器直接 {@code new ResourceLocation(path)}，不做命名空间校验），
  * 所以这里指向原版的 {@code minecraft:random/glass1..3}，沿用原本的碎裂声、只换字幕。
  * 这样既不用为一句字幕去塞几个 ogg，资源包替换了原版音效时也照常跟着走。
+ *
+ * <h2>顺带补上 Spore 自己漏掉的 7 个字幕键</h2>
+ * Spore 的 {@code sounds.json} 里有 7 个 {@code subtitle} 值在它自己的语言文件里<b>没有对应条目</b>：
+ * <pre>
+ *   sounds.spore.engine / gast_ambient / nuke / saw_sound / spit / surgery / tumor
+ * </pre>
+ * 于是这几句字幕会把<b>原始键名</b>直接画到屏幕上（实测 {@code sounds.spore.spit}）。
+ *
+ * <p>补它们不需要碰 Spore 的文件：语言键是<b>全局</b>的——客户端会把所有命名空间下的
+ * {@code lang/*.json} 合并成一张表再查，所以本 mod 的语言文件（{@code assets/spore_add/lang/}）
+ * 直接定义这几个 {@code sounds.spore.*} 键就能生效。
+ *
+ * <p>代价是<b>可能盖住 Spore 未来的修正</b>：两边都定义同一个键时，后加载的那份生效。
+ * 所以哪天 Spore 自己补上了这几句，就该把本 mod 语言文件里的这 7 行删掉。
  */
 public final class ModSounds {
 

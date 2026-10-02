@@ -2,7 +2,7 @@ package com.frnc.spore_add.block;
 
 import javax.annotation.Nullable;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.item.ModItems;
 import com.frnc.spore_add.sound.ModSounds;
 
@@ -116,7 +116,7 @@ public class FrostSighBlock extends BaseEntityBlock {
         if (!(level.getBlockEntity(pos) instanceof FrostSighBlockEntity core)) {
             return InteractionResult.PASS;
         }
-        if (!core.activate((ServerLevel) level, SporeAddConfig.frostSighRadius())) {
+        if (!core.activate((ServerLevel) level, SporeAddPlayerConfig.frostSighRadius())) {
             // 已经激活过了：不消耗，也不重复开始
             return InteractionResult.SUCCESS;
         }

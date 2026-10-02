@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.block.LiquidColdBlock;
 import com.frnc.spore_add.block.ModBlocks;
 import com.frnc.spore_add.compat.SporeCompat;
@@ -118,7 +118,7 @@ public final class FrostSighBlast {
      * <p>逐列的铺冰与冻结不在这里——那些由冲击环推进时按列处理。
      */
     public static void detonate(ServerLevel level, BlockPos center) {
-        int radius = SporeAddConfig.frostSighRadius();
+        int radius = SporeAddPlayerConfig.frostSighRadius();
 
         // 需求 8：爆发点处生成一格液态寒冷。
         // 放在最前面，免得后面铺冰把它盖掉（冲击环是从中心往外推的，中心那一列会被最先处理）。
@@ -409,10 +409,10 @@ public final class FrostSighBlast {
      * <p>回调里对圆盘<b>外</b>的格子读旧值——那些格子永远不会被写，所以不存在"读到自己刚写的数据"。
      */
     private static void changeBiome(ServerLevel level, BlockPos center, int radius) {
-        ResourceLocation id = ResourceLocation.tryParse(SporeAddConfig.frostSighColdBiome());
+        ResourceLocation id = ResourceLocation.tryParse(SporeAddPlayerConfig.frostSighColdBiome());
         if (id == null) {
             LOGGER.warn("[SporeAdd] frostSigh.coldBiome 不是合法的 id，跳过改生物群系: {}",
-                    SporeAddConfig.frostSighColdBiome());
+                    SporeAddPlayerConfig.frostSighColdBiome());
             return;
         }
         Holder<Biome> target = level.registryAccess()
@@ -478,9 +478,9 @@ public final class FrostSighBlast {
         if (frostbite == null) {
             return;
         }
-        int level_ = SporeAddConfig.frostSighFrostbiteLevel();
+        int level_ = SporeAddPlayerConfig.frostSighFrostbiteLevel();
         int amplifier = Math.max(0, Math.min(126, level_ - 1));
-        int duration = SporeAddConfig.frostSighFrostbiteTicks();
+        int duration = SporeAddPlayerConfig.frostSighFrostbiteTicks();
         Vec3 centerVec = Vec3.atCenterOf(center);
         double limitSqr = radius * radius;
 

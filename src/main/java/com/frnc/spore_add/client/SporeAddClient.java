@@ -1,7 +1,7 @@
 package com.frnc.spore_add.client;
 
 import com.frnc.spore_add.SporeAdd;
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.client.particle.FrostMoteParticle;
 import com.frnc.spore_add.entity.FrostNovaCloudEntity;
 import com.frnc.spore_add.entity.FrostNovaEntity;
@@ -87,6 +87,8 @@ public final class SporeAddClient {
                 context -> new InvisibleEntityRenderer<FrostSighCloudEntity>(context));
         event.registerEntityRenderer(ModEntities.FROST_SIGH_AFTERMATH.get(),
                 context -> new InvisibleEntityRenderer<FrostSighAftermathEntity>(context));
+        // 拾荒者：唯一一个用别人（Spore）的渲染器画的生物，见 ScavengerRenderer 的类注释
+        event.registerEntityRenderer(ModEntities.SCAVENGER.get(), ScavengerRenderer::new);
     }
 
     /**
@@ -189,7 +191,7 @@ public final class SporeAddClient {
                     // 改 chargeTicks 之后三段蓄力外观仍然均匀铺满整个蓄力过程。
                     // 之前写死 20 时，chargeTicks 一旦改成 100，动画会在第一秒内走完三段、
                     // 剩下四秒卡在最后一段。
-                    int chargeTicks = SporeAddConfig.frostNovaChargeTicks();
+                    int chargeTicks = SporeAddPlayerConfig.frostNovaChargeTicks();
                     float charge = (float) (stack.getUseDuration() - entity.getUseItemRemainingTicks())
                             / (float) chargeTicks;
                     return Mth.clamp(charge, 0.0F, 1.0F);

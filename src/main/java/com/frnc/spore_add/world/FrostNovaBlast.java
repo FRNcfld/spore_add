@@ -2,7 +2,7 @@ package com.frnc.spore_add.world;
 
 import javax.annotation.Nullable;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.block.ModBlocks;
 import com.frnc.spore_add.compat.SporeCompat;
 import com.frnc.spore_add.entity.FrostNovaCloudEntity;
@@ -54,7 +54,7 @@ import net.minecraft.world.phys.Vec3;
  *
  * <h2>威力按蓄力系数缩放</h2>
  * 两个半径、冻伤秒数、层数、爆炸强度<b>五项</b>都跟着蓄力变，走的是同一条曲线
- * （{@link SporeAddConfig#powerFactor}），所以不会出现"半径涨得比层数快"这种不一致。
+ * （{@link SporeAddPlayerConfig#powerFactor}），所以不会出现"半径涨得比层数快"这种不一致。
  * 二次爆炸的三个倍率是独立的，不再乘蓄力系数——它们乘的是"一次爆炸的结果"。
  *
  * <h2>方块替换是彻底的，且不掉落</h2>
@@ -119,7 +119,7 @@ public final class FrostNovaBlast {
      * 一次爆炸。只应在服务端调用——这里用 {@code ServerLevel} 的类型判断兜住，
      * 比 {@code isClientSide()} 更严（顺带拿到发送粒子包所需的 {@code ServerLevel}）。
      *
-     * @param power  蓄力系数 0~1，见 {@link SporeAddConfig#scaledByPower}
+     * @param power  蓄力系数 0~1，见 {@link SporeAddPlayerConfig#scaledByPower}
      * @param source 爆炸的归属实体，通常是那枚弹体（它的 owner 会被原版解析成投掷者，用于结算击杀）
      */
     public static void detonate(Level level, BlockPos center, double power, @Nullable Entity source) {
@@ -127,7 +127,7 @@ public final class FrostNovaBlast {
             return;
         }
         Vec3 centerVec = Vec3.atCenterOf(center);
-        int effectRadius = SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaEntityRadius(), power);
+        int effectRadius = SporeAddPlayerConfig.scaledByPower(SporeAddPlayerConfig.frostNovaEntityRadius(), power);
         int durationTicks = primaryFrostbiteDuration(power);
         int amplifier = frostbiteAmplifier(power);
 
@@ -137,11 +137,11 @@ public final class FrostNovaBlast {
         // 放在 freezeBlocks 之后无所谓——冻结只碰换方块半径内的方块，而冰不是真菌方块。
         FungalClearing.clear(server, center, effectRadius);
         frostbiteInRadius(server, centerVec, effectRadius, durationTicks, amplifier);
-        spawnCloud(server, centerVec, effectRadius, SporeAddConfig.frostNovaPrimaryCloudTicks(),
+        spawnCloud(server, centerVec, effectRadius, SporeAddPlayerConfig.frostNovaPrimaryCloudTicks(),
                 durationTicks, amplifier);
         spawnIceCore(server, centerVec, power);
         burstParticles(server, centerVec,
-                SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaBlockRadius(), power) * 0.6D,
+                SporeAddPlayerConfig.scaledByPower(SporeAddPlayerConfig.frostNovaBlockRadius(), power) * 0.6D,
                 BURST_PARTICLES);
         playImpactSound(server, centerVec);
     }
@@ -164,7 +164,7 @@ public final class FrostNovaBlast {
      */
     private static void explode(ServerLevel level, Vec3 center, @Nullable Entity source, double power) {
         level.explode(source, center.x, center.y, center.z,
-                SporeAddConfig.frostNovaExplosionPower(power), Level.ExplosionInteraction.NONE);
+                SporeAddPlayerConfig.frostNovaExplosionPower(power), Level.ExplosionInteraction.NONE);
     }
 
     // ------------------------------------------------------------------
@@ -172,7 +172,7 @@ public final class FrostNovaBlast {
     // ------------------------------------------------------------------
 
     private static void freezeBlocks(Level level, BlockPos center, double power) {
-        int radius = SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaBlockRadius(), power);
+        int radius = SporeAddPlayerConfig.scaledByPower(SporeAddPlayerConfig.frostNovaBlockRadius(), power);
 
         // 判定半径＝标称半径 + 余量，见 RADIUS_SLACK。循环上界仍是 radius：
         // radius+1 处的方块距离至少 radius+1 > radius+0.25，本来就不可能入选
@@ -307,12 +307,12 @@ public final class FrostNovaBlast {
     }
 
     private static int primaryFrostbiteDuration(double power) {
-        return SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaFrostbiteSeconds(), power) * 20;
+        return SporeAddPlayerConfig.scaledByPower(SporeAddPlayerConfig.frostNovaFrostbiteSeconds(), power) * 20;
     }
 
     /** 配置填的是显示层数，这里换成 amplifier（层数 - 1），并夹到非负。 */
     private static int frostbiteAmplifier(double power) {
-        return Math.max(0, SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaFrostbiteLevel(), power) - 1);
+        return Math.max(0, SporeAddPlayerConfig.scaledByPower(SporeAddPlayerConfig.frostNovaFrostbiteLevel(), power) - 1);
     }
 
     // ------------------------------------------------------------------
@@ -343,19 +343,19 @@ public final class FrostNovaBlast {
      * 蓄力已经体现在一次爆炸的结果里了，再乘一次就是平方，满蓄力会离谱。
      */
     private static void spawnIceCore(ServerLevel level, Vec3 center, double power) {
-        int iceRadius = SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaBlockRadius(), power);
+        int iceRadius = SporeAddPlayerConfig.scaledByPower(SporeAddPlayerConfig.frostNovaBlockRadius(), power);
 
         float secondaryRadius = (float) Math.max(1.0D,
-                SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaEntityRadius(), power)
-                        * SporeAddConfig.frostNovaSecondaryRangeMultiplier());
+                SporeAddPlayerConfig.scaledByPower(SporeAddPlayerConfig.frostNovaEntityRadius(), power)
+                        * SporeAddPlayerConfig.frostNovaSecondaryRangeMultiplier());
         int secondaryDuration = (int) Math.round(
-                primaryFrostbiteDuration(power) * SporeAddConfig.frostNovaSecondaryPowerMultiplier());
+                primaryFrostbiteDuration(power) * SporeAddPlayerConfig.frostNovaSecondaryPowerMultiplier());
         int secondaryLevel = (int) Math.min(FROSTBITE_LEVEL_CAP, Math.round(
-                SporeAddConfig.scaledByPower(SporeAddConfig.frostNovaFrostbiteLevel(), power)
-                        * SporeAddConfig.frostNovaSecondaryPowerMultiplier()));
+                SporeAddPlayerConfig.scaledByPower(SporeAddPlayerConfig.frostNovaFrostbiteLevel(), power)
+                        * SporeAddPlayerConfig.frostNovaSecondaryPowerMultiplier()));
 
         level.addFreshEntity(new FrostNovaIceCoreEntity(level, center, iceRadius,
-                SporeAddConfig.frostNovaSecondaryDelayTicks(),
+                SporeAddPlayerConfig.frostNovaSecondaryDelayTicks(),
                 secondaryRadius, secondaryDuration, Math.max(0, secondaryLevel - 1)));
     }
 
@@ -384,7 +384,7 @@ public final class FrostNovaBlast {
         // 二次爆炸的影响范围是一次爆炸的 1.5 倍，清真菌也用这个放大后的半径
         FungalClearing.clear(level, center, radius);
         frostbiteInRadius(level, centerVec, radius, durationTicks, amplifier);
-        spawnCloud(level, centerVec, radius, SporeAddConfig.frostNovaSecondaryCloudTicks(),
+        spawnCloud(level, centerVec, radius, SporeAddPlayerConfig.frostNovaSecondaryCloudTicks(),
                 durationTicks, amplifier);
         burstParticles(level, centerVec, radius * 0.6D, SECONDARY_BURST_PARTICLES);
         // 用本 mod 自己的声音事件而不是原版的 GLASS_BREAK：音频文件还是那几个玻璃碎裂声，

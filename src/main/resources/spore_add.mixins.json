@@ -11,7 +11,19 @@
     "WarmthFreezeMixin",
     "WarmthPowderSnowMixin",
     "WarmthFrostbiteScalingMixin",
-    "LiquidColdRangeMixin"
+    "LiquidColdRangeMixin",
+    "FungusColdMixin",
+    "SporeDespawnScopeMixin",
+    "EntityDiscardHarvestMixin",
+    "ProtoRaidMixin",
+    "DespawnCapMixin",
+    "InfectedHumanTypeMixin",
+    "ScannerItemMixin",
+    "ScavengerDespawnProtectionMixin",
+    "ProtoStorageMixin",
+    "WombMutationMixin",
+    "WombRaidMixin",
+    "CalamityHatchMixin"
   ],
   "client": [
     "IgnitableEffectMixin",

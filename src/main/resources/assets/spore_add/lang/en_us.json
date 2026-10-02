@@ -50,5 +50,44 @@
   "tooltip.spore_add.frost_sigh.countdown": "Detonates %s s after arming, shockwave sweeps in %s s",
   "tooltip.spore_add.frost_sigh.frostbite": "Frostbite %s layers / %s min, players frozen %s s",
   "tooltip.spore_add.frost_sigh.snow": "Snowfall for %s min after detonation",
-  "tooltip.spore_add.frost_sigh.activate": "Right-click with a Frost Nova to arm (consumes 1)"
+  "tooltip.spore_add.frost_sigh.activate": "Right-click with a Frost Nova to arm (consumes 1)",
+
+  "message.spore_add.raid_declare": "They have noticed you...",
+  "message.spore_add.raid_dread": "Tremble...",
+  "message.spore_add.raid_arena": "The ground splits open.",
+  "message.spore_add.raid_waves": "The swarm closes in (%s waves)...",
+  "message.spore_add.raid_begin": "They are coming.",
+  "message.spore_add.raid_survived": "You endured.",
+  "message.spore_add.raid_failed": "The swarm has taken your measure.",
+
+  "message.spore_add.scan.world_hatred": "[World hatred] %s",
+  "message.spore_add.scan.fungus_resistance": "  Fungus damage reduction %s (non-player damage only)",
+  "message.spore_add.scan.kill_value": "  Killing it grants %s hatred",
+  "message.spore_add.scan.personal_hatred": "[Personal hatred] %s",
+  "message.spore_add.scan.tier": "  Raid tier %s (one step per %s)",
+  "message.spore_add.scan.buff_header": "  Your current buffs:",
+  "message.spore_add.scan.buff_attack": "    Attack damage +%s",
+  "message.spore_add.scan.buff_armor": "    Armor +%s",
+  "message.spore_add.scan.buff_luck": "    Luck +%s",
+  "message.spore_add.scan.buff_reduction": "    Damage reduction %s",
+  "message.spore_add.scan.buff_final_damage": "    Final damage bonus %s",
+  "message.spore_add.raid_fizzled": "The swarm recedes...",
+
+  "entity.spore_add.scavenger": "Scavenger",
+  "item.spore_add.scavenger_spawn_egg": "Scavenger Spawn Egg",
+
+  "command.spore_add.hatred.header": "Hatred of %s:",
+  "command.spore_add.hatred.personal": "  Personal: %s",
+  "command.spore_add.hatred.world": "  World total: %s",
+  "command.spore_add.hatred.bonuses": "  Damage reduction %s, final damage bonus %s",
+  "command.spore_add.hatred.threshold": "  Raid tier: %s",
+  "command.spore_add.hatred.set": "Set %s's hatred to %s",
+
+  "sounds.spore.engine": "Engine running",
+  "sounds.spore.gast_ambient": "Gastgeber growling",
+  "sounds.spore.nuke": "Nuclear detonation",
+  "sounds.spore.saw_sound": "Saw blade spinning",
+  "sounds.spore.spit": "Spitting",
+  "sounds.spore.surgery": "Performing surgery",
+  "sounds.spore.tumor": "Tumor bursting"
 }

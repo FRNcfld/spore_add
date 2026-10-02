@@ -43,7 +43,7 @@ import org.slf4j.Logger;
  *       换成蓝冰/浮冰、给球内的生物叠冻伤。物品见 {@code FrostNovaItem}，实体见 {@code FrostNovaEntity}，
  *       爆发见 {@code FrostNovaBlast}。</li>
  *   <li><b>可配置项</b>：冰霜新星的四个威力参数与液态寒冷的影响半径都在
- *       {@code config/spore_add-common.toml} 里，见 {@link SporeAddConfig}。</li>
+ *       {@code config/spore_add-player-common.toml} 里，见 {@link SporeAddPlayerConfig}。</li>
  * </ul>
  * 其余玩法尚未实现。后续约定：
  * <ul>
@@ -77,9 +77,20 @@ public class SporeAdd {
         // 模组加载期的初始化（注册表已可用，但世界尚未创建）
         modEventBus.addListener(this::commonSetup);
 
-        // 配置：必须在这里注册。注册之后 Forge 会在模组加载期读文件（生成默认值），
-        // 而所有取值都发生在游戏运行期，所以不存在"配置还没读就取值"的问题。
-        context.registerConfig(ModConfig.Type.COMMON, SporeAddConfig.SPEC);
+        // 两份配置，**都显式给文件名**。
+        //
+        // 为什么不省事用默认名：Forge 默认按 "modId-类型" 拼文件名，两个 COMMON 会算出同一个
+        // spore_add-common.toml，而 ConfigTracker 撞名会直接抛 "Config conflict detected!" 崩游戏。
+        // 显式给名字之后，两份都落在 config/ 下、都是全局文件，也不会撞。
+        //
+        // 分两份是按「谁受益」：玩家那一份放让人更强的东西（冰霜武器、恨意值给玩家的增益、HUD），
+        // 真菌那一份放让怪更强的东西（真菌加强、恨意值系统、减伤、资源、袭击）。
+        // 于是「想调难度」与「想调手感」各看一份，不必来回对照。详见两个配置类的类注释。
+        //
+        // 注册必须在这里：Forge 会在模组加载期读文件（生成默认值），而所有取值都发生在游戏运行期，
+        // 所以不存在"配置还没读就取值"的问题。
+        context.registerConfig(ModConfig.Type.COMMON, SporeAddPlayerConfig.SPEC, SporeAddPlayerConfig.FILE_NAME);
+        context.registerConfig(ModConfig.Type.COMMON, SporeAddFungusConfig.SPEC, SporeAddFungusConfig.FILE_NAME);
 
         // 各部分内容各自的注册表。顺序其实无所谓（详见 ModFluids 里关于静态初始化顺序的说明），
         // 但把流体放在最前面更贴合阅读顺序：方块和桶都要引用流体的注册项。

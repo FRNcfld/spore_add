@@ -10,7 +10,11 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 /**
- * 本 mod 的网络通道。目前只有一个包：可燃与爆燃的等级同步。
+ * 本 mod 的网络通道。只有一个包：可燃与爆燃的等级同步。
+ *
+ * <p>恨意值<b>不走网络</b>——它原先有一个 {@code ClientboundHatredPacket} 专门喂屏幕上的 HUD，
+ * 后来 HUD 删了，那个包就只剩下"每次恨意值变化都发两个 double 给一个没人读的缓存"。
+ * 现在想看恨意值有两个服务端的入口：{@code /spore_add hatred} 命令与扫描仪。
  */
 public final class ModNetwork {
 
@@ -54,4 +58,5 @@ public final class ModNetwork {
                 new ClientboundBuffLevelsPacket(player.getId(),
                         BuffLevels.ignitable(player), BuffLevels.deflagration(player)));
     }
+
 }

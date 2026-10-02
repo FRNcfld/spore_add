@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.enchantment.Warmth;
 import com.frnc.spore_add.particle.ModParticles;
 import com.frnc.spore_add.world.FrostSighBlast;
@@ -155,8 +155,8 @@ public class FrostSighShockwaveEntity extends Entity {
 
     /** 由 {@code FrostSighBlockEntity} 在引爆时调用。 */
     public static void begin(ServerLevel level, BlockPos center) {
-        int radius = SporeAddConfig.frostSighRadius();
-        int shockwaveTicks = SporeAddConfig.frostSighShockwaveTicks();
+        int radius = SporeAddPlayerConfig.frostSighRadius();
+        int shockwaveTicks = SporeAddPlayerConfig.frostSighShockwaveTicks();
         long now = level.getGameTime();
 
         // 爆发瞬间的一次性效果：中心那格液态寒冷 + 把圆盘内的生物群系改成寒带。
@@ -165,7 +165,7 @@ public class FrostSighShockwaveEntity extends Entity {
 
         // 1 号环（击杀）立刻起跑；2 号环（其余全部效果）晚一点，见类注释
         spawn(level, center, Mode.KILL, now, shockwaveTicks, radius);
-        spawn(level, center, Mode.EFFECT, now + SporeAddConfig.frostSighSecondRingDelayTicks(),
+        spawn(level, center, Mode.EFFECT, now + SporeAddPlayerConfig.frostSighSecondRingDelayTicks(),
                 shockwaveTicks, radius);
 
         // 蘑菇云与「爆后残留」（降雪 + 冰雾）也都在这一处生成：它们是"爆发"的一部分，
@@ -175,7 +175,7 @@ public class FrostSighShockwaveEntity extends Entity {
         double cy = center.getY() + 0.5D;
         double cz = center.getZ() + 0.5D;
         level.addFreshEntity(new FrostSighCloudEntity(level, cx, cy, cz, radius,
-                SporeAddConfig.frostSighMushroomTicks()));
+                SporeAddPlayerConfig.frostSighMushroomTicks()));
         FrostSighAftermathEntity.begin(level, center, radius);
     }
 
@@ -305,7 +305,7 @@ public class FrostSighShockwaveEntity extends Entity {
      * <b>最后一 tick</b> 才掉出来的那批，由 {@link #finish} 用完整半径补一次。
      */
     private void encaseLootInside(ServerLevel server, double ringRadius) {
-        if (!SporeAddConfig.frostSighFreezeItems()) {
+        if (!SporeAddPlayerConfig.frostSighFreezeItems()) {
             return;
         }
         Vec3 center = position();
@@ -317,7 +317,7 @@ public class FrostSighShockwaveEntity extends Entity {
                     || item.position().distanceToSqr(center) > limitSqr) {
                 continue;
             }
-            if (encasedCount >= SporeAddConfig.frostSighFreezeMaxEntities()) {
+            if (encasedCount >= SporeAddPlayerConfig.frostSighFreezeMaxEntities()) {
                 return;   // 到顶了，剩下的掉落物就地留着
             }
             FrozenCapsuleEntity.encaseLoot(server, item);
@@ -341,7 +341,7 @@ public class FrostSighShockwaveEntity extends Entity {
      * 现在只有"确实还在冰封期内"才清零。
      */
     private void freezePlayersInside(ServerLevel server, double ringRadius) {
-        int frozenTicks = SporeAddConfig.frostSighFrozenTicks();
+        int frozenTicks = SporeAddPlayerConfig.frostSighFrozenTicks();
         long now = server.getGameTime();
 
         Vec3 center = position();

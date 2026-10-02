@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "spore:biomass_bacon",
+    "spore:organoid_soup",
+    "spore:brain_noodles",
+    "spore:meaty_icecream",
+    "spore:fleshy_ribs",
+    "spore:sausage",
+    "spore:vigil_eye_soup",
+    "spore:reforged_biomass_t",
+    "spore:reforged_biomass_w",
+    "spore:reforged_biomass_a"
+  ]
+}

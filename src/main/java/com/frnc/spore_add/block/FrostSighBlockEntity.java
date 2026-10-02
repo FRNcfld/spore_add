@@ -1,6 +1,6 @@
 package com.frnc.spore_add.block;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.entity.FrostSighShockwaveEntity;
 import com.frnc.spore_add.particle.ModParticles;
 import com.frnc.spore_add.sound.ModSounds;
@@ -70,13 +70,13 @@ public class FrostSighBlockEntity extends BlockEntity {
             return false;
         }
         activated = true;
-        detonateAtGameTime = level.getGameTime() + SporeAddConfig.frostSighCountdownTicks();
+        detonateAtGameTime = level.getGameTime() + SporeAddPlayerConfig.frostSighCountdownTicks();
         setChanged();
         // 同时写进方块状态：客户端靠它才知道"这个方块已经激活、挖不动了"（BE 的字段不过网）
         level.setBlock(getBlockPos(), getBlockState().setValue(FrostSighBlock.ACTIVATED, true), Block.UPDATE_ALL);
 
         // 把圆盘覆盖的区块钉住，否则玩家走开、区块卸载，倒计时就停了
-        if (SporeAddConfig.frostSighForceLoadChunks()) {
+        if (SporeAddPlayerConfig.frostSighForceLoadChunks()) {
             FrostSighChunks.force(level, getBlockPos(), radius);
         }
         return true;
@@ -157,7 +157,7 @@ public class FrostSighBlockEntity extends BlockEntity {
      * 全发给所有玩家既浪费又没必要——每个人只该看到自己附近那一段。
      */
     private void emitBoundaryWarning(ServerLevel level, BlockPos pos) {
-        int radius = SporeAddConfig.frostSighRadius();
+        int radius = SporeAddPlayerConfig.frostSighRadius();
         double cx = pos.getX() + 0.5D;
         double cy = pos.getY() + 1.0D;
         double cz = pos.getZ() + 0.5D;
@@ -223,7 +223,7 @@ public class FrostSighBlockEntity extends BlockEntity {
 
     /** 倒计时进度：0 = 刚激活，1 = 即将爆发。 */
     private static float countdownProgress(long remaining) {
-        int total = Math.max(1, SporeAddConfig.frostSighCountdownTicks());
+        int total = Math.max(1, SporeAddPlayerConfig.frostSighCountdownTicks());
         return 1.0F - Math.min(1.0F, (float) remaining / total);
     }
 
@@ -318,7 +318,7 @@ public class FrostSighBlockEntity extends BlockEntity {
      */
     public void onRemoved(ServerLevel level) {
         if (activated && !detonated) {
-            FrostSighChunks.release(level, getBlockPos(), SporeAddConfig.frostSighRadius());
+            FrostSighChunks.release(level, getBlockPos(), SporeAddPlayerConfig.frostSighRadius());
         }
     }
 

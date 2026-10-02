@@ -50,5 +50,44 @@
   "tooltip.spore_add.frost_sigh.countdown": "激活后 %s 秒爆发，冲击环 %s 秒扩完",
   "tooltip.spore_add.frost_sigh.frostbite": "冻伤 %s 层 / %s 分钟，玩家冰封 %s 秒",
   "tooltip.spore_add.frost_sigh.snow": "爆发后降雪 %s 分钟",
-  "tooltip.spore_add.frost_sigh.activate": "用冰霜新星右键激活（消耗 1 个）"
+  "tooltip.spore_add.frost_sigh.activate": "用冰霜新星右键激活（消耗 1 个）",
+
+  "message.spore_add.raid_declare": "它们注意到你了……",
+  "message.spore_add.raid_dread": "恐惧吧……",
+  "message.spore_add.raid_arena": "地面裂开了。",
+  "message.spore_add.raid_waves": "菌群开始围剿（%s 波）……",
+  "message.spore_add.raid_begin": "它们来了。",
+  "message.spore_add.raid_survived": "你熬过去了。",
+  "message.spore_add.raid_failed": "菌群记住了你。",
+
+  "message.spore_add.scan.world_hatred": "[世界恨意值] %s",
+  "message.spore_add.scan.fungus_resistance": "  真菌减伤 %s（只对非玩家伤害生效）",
+  "message.spore_add.scan.kill_value": "  击杀可得恨意值 %s",
+  "message.spore_add.scan.personal_hatred": "[个人恨意值] %s",
+  "message.spore_add.scan.tier": "  袭击档位 %s（每 %s 一档）",
+  "message.spore_add.scan.buff_header": "  当前受到的增益：",
+  "message.spore_add.scan.buff_attack": "    基础攻击力 +%s",
+  "message.spore_add.scan.buff_armor": "    防御力 +%s",
+  "message.spore_add.scan.buff_luck": "    幸运值 +%s",
+  "message.spore_add.scan.buff_reduction": "    减伤 %s",
+  "message.spore_add.scan.buff_final_damage": "    最终伤害加成 %s",
+  "message.spore_add.raid_fizzled": "菌群退去了……",
+
+  "entity.spore_add.scavenger": "拾荒者",
+  "item.spore_add.scavenger_spawn_egg": "拾荒者刷怪蛋",
+
+  "command.spore_add.hatred.header": "%s 的恨意值：",
+  "command.spore_add.hatred.personal": "  个人：%s",
+  "command.spore_add.hatred.world": "  世界总计：%s",
+  "command.spore_add.hatred.bonuses": "  减伤 %s，最终伤害加成 %s",
+  "command.spore_add.hatred.threshold": "  袭击档位：%s",
+  "command.spore_add.hatred.set": "已将 %s 的恨意值设为 %s",
+
+  "sounds.spore.engine": "引擎运转",
+  "sounds.spore.gast_ambient": "宿主低吼",
+  "sounds.spore.nuke": "核爆",
+  "sounds.spore.saw_sound": "锯刃转动",
+  "sounds.spore.spit": "喷吐",
+  "sounds.spore.surgery": "手术进行中",
+  "sounds.spore.tumor": "肿瘤爆裂"
 }

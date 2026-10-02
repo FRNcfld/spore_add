@@ -1,6 +1,6 @@
 package com.frnc.spore_add.entity;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.item.ModItems;
 import com.frnc.spore_add.particle.ModParticles;
 import com.frnc.spore_add.world.FrostNovaBlast;
@@ -73,7 +73,7 @@ public class FrostNovaEntity extends ThrowableItemProjectile {
     private static final String KEY_POWER = "Power";
     private static final String KEY_DETONATE_AT = "DetonateAt";
 
-    /** 蓄力系数 0~1（1 = 满蓄力），决定落点爆发的威力。见 {@code SporeAddConfig#scaledByPower}。 */
+    /** 蓄力系数 0~1（1 = 满蓄力），决定落点爆发的威力。见 {@code SporeAddPlayerConfig#scaledByPower}。 */
     private double power = 1.0D;
 
     /**
@@ -100,7 +100,7 @@ public class FrostNovaEntity extends ThrowableItemProjectile {
     public FrostNovaEntity(Level level, LivingEntity shooter, double power) {
         this(ModEntities.FROST_NOVA.get(), level);
         this.power = power;
-        this.detonateAtGameTime = level.getGameTime() + SporeAddConfig.frostNovaAutoDetonateTicks();
+        this.detonateAtGameTime = level.getGameTime() + SporeAddPlayerConfig.frostNovaAutoDetonateTicks();
         setOwner(shooter);
 
         Vec3 look = shooter.getLookAngle();
@@ -110,7 +110,7 @@ public class FrostNovaEntity extends ThrowableItemProjectile {
         // 用 shoot 而不是 shootFromRotation：后者会把发射者自身的移动速度叠加进弹道，
         // 一边跑一边射就会出现固定偏差——正是需求要排除的"偏移"。inaccuracy 传 0 则不产生随机散布。
         // 速度来自配置（{@code speedPerTick}，格/tick），不随蓄力变化。
-        shoot(look.x, look.y, look.z, (float) SporeAddConfig.frostNovaSpeed(), 0.0F);
+        shoot(look.x, look.y, look.z, (float) SporeAddPlayerConfig.frostNovaSpeed(), 0.0F);
     }
 
     /** 弹体画面上就是这个物品的图标（原版 {@code ThrownItemRenderer} 会取它）。 */

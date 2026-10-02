@@ -1,6 +1,6 @@
 package com.frnc.spore_add.entity;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.sound.ModSounds;
 
 import net.minecraft.nbt.CompoundTag;
@@ -70,7 +70,7 @@ public class FrozenCapsuleEntity extends Entity {
         capsule.setPos(item.getX(), item.getY(), item.getZ());
         capsule.loot = stack.copy();
         // 配置里的 0 是**哨兵值**，表示"永不自动融化"而不是"立刻融化"，所以必须原样保留 0
-        int meltTicks = SporeAddConfig.frostSighIceMeltTicks();
+        int meltTicks = SporeAddPlayerConfig.frostSighIceMeltTicks();
         capsule.meltAtGameTime = meltTicks > 0 ? level.getGameTime() + meltTicks : 0L;
 
         level.addFreshEntity(capsule);

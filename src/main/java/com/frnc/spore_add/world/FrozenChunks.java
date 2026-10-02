@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -36,7 +36,7 @@ import net.minecraft.world.level.Level;
  * 逐块算距离代价太大；代价是同一区块内略远的冰也会被保护，偏差方向是"倾向让冰保持冻结"。
  *
  * <h2>半径来自配置，且必须与冰扩散用同一个</h2>
- * 本类的半径取自 {@link SporeAddConfig#liquidColdRadius()}，与 {@code LiquidColdBlock} 是<b>同一个来源</b>。
+ * 本类的半径取自 {@link SporeAddPlayerConfig#liquidColdRadius()}，与 {@code LiquidColdBlock} 是<b>同一个来源</b>。
  * 这一点是硬要求：{@link #mark} 按半径决定登记哪些区块，而 {@link #isWithinRange} 按半径算距离上限，
  * 两者若不一致，登记范围偏小就会让粗筛漏掉本该在球内的位置、外圈的寒冷效果整片失效。
  * 两处都是<b>调用时</b>读配置，所以运行时改半径最多有一个登记周期（{@link #TTL_TICKS}）的过渡，之后自洽。
@@ -74,7 +74,7 @@ public final class FrozenChunks {
         }
 
         long packedSource = source.asLong();
-        int radius = SporeAddConfig.liquidColdRadius();
+        int radius = SporeAddPlayerConfig.liquidColdRadius();
         int minX = (source.getX() - radius) >> 4;
         int maxX = (source.getX() + radius) >> 4;
         int minZ = (source.getZ() - radius) >> 4;
@@ -113,7 +113,7 @@ public final class FrozenChunks {
             return false;
         }
         long now = level.getGameTime();
-        int radius = SporeAddConfig.liquidColdRadius();
+        int radius = SporeAddPlayerConfig.liquidColdRadius();
         int limit = radius * radius;
         int chunkX = pos.getX() >> 4;
         int chunkZ = pos.getZ() >> 4;

@@ -4,12 +4,32 @@ import net.minecraft.util.Mth;
 import net.minecraftforge.common.ForgeConfigSpec;
 
 /**
- * 本 mod 的配置，写进 {@code config/spore_add-common.toml}。
+ * <b>玩家侧</b>的配置，写进 {@code config/spore_add-player-common.toml}。
+ *
+ * <h2>两份配置是按「谁受益」分的</h2>
+ * <table border="1">
+ *   <caption>想调什么，就开哪一份</caption>
+ *   <tr><th>文件</th><th>里面是什么</th></tr>
+ *   <tr><td>{@code spore_add-player-common.toml}（本类）</td>
+ *       <td><b>让玩家更强、更好用</b>的东西：冰霜武器（冰霜新星、液态寒冷、冰雪的叹息）、
+ *           恨意值给玩家的增益</td></tr>
+ *   <tr><td>{@code spore_add-fungus-common.toml}（{@link SporeAddFungusConfig}）</td>
+ *       <td><b>让真菌更强</b>的东西：真菌加强、恨意值系统本身、世界恨意值给真菌的减伤、
+ *           资源、真菌袭击</td></tr>
+ * </table>
+ * 于是「想把怪调强一点」只动真菌那一份，「想让自己舒服一点」只动这一份，
+ * 不必在两份文件之间来回对照。
+ *
+ * <h2>为什么文件名是手写的</h2>
+ * 两份都用显式文件名注册。Forge 默认按 {@code modId-类型} 拼名字，两个 COMMON 会撞成同一个
+ * {@code spore_add-common.toml}，而 {@code ConfigTracker} 撞名会直接抛
+ * {@code "Config conflict detected!"} 把游戏崩掉。
  *
  * <h2>为什么是 COMMON 而不是 SERVER</h2>
- * 这里所有数值都是<b>服务端权威</b>的玩法参数，客户端一个都不读，所以两种类型都能用。选 COMMON 的理由是：
- * 它不依赖世界存在（专用服务端一启动就能生成文件），而且只有一份文件；SERVER 类型会按存档分别生成、
- * 并把值同步给客户端——那份同步对我们毫无用处。代价是它不跟存档走：换个存档用的是同一份数值。
+ * 这里所有数值都是<b>服务端权威</b>的玩法参数，客户端一个都不读，
+ * 所以两种类型都能用。选 COMMON 的理由是：它不依赖世界存在（专用服务端一启动就能生成文件），
+ * 而且只有一份全局文件；SERVER 类型会按存档分别生成、并把值同步给客户端——那份同步对我们毫无用处。
+ * 代价是它不跟存档走：换个存档用的是同一份数值。
  *
  * <h2>配置值一律不在静态初始化器里读</h2>
  * {@link #SPEC} 的静态块只<b>声明</b>各项，真正的 {@code get()} 全部发生在下面的访问器里，也就是
@@ -23,7 +43,10 @@ import net.minecraftforge.common.ForgeConfigSpec;
  * 而 amplifier 的网络同步与存档序列化都是字节，超过 127 会静默损坏（详见 {@code FrostbiteLevels} 的类注释），
  * 所以这里封到 127——正好是"层数 127 对应 amplifier 126"。
  */
-public final class SporeAddConfig {
+public final class SporeAddPlayerConfig {
+
+    /** 本类的配置文件名（含扩展名）。必须是显式的，理由见类注释。 */
+    public static final String FILE_NAME = "spore_add-player-common.toml";
 
     /** 配置规格。主类构造时注册到 {@code ModConfig.Type.COMMON}。 */
     public static final ForgeConfigSpec SPEC;
@@ -31,16 +54,39 @@ public final class SporeAddConfig {
     private static final FrostNova FROST_NOVA;
     private static final LiquidCold LIQUID_COLD;
     private static final FrostSigh FROST_SIGH;
+    private static final PlayerBuffs PLAYER_BUFFS;
 
     static {
+        // **这里的顺序就是生成出来的 toml 里的段落顺序**，也就是玩家打开文件看到的顺序：
+        // 本文件里唯一决定"段落排布"的地方就是这里，别在别处找。
+        // 按「玩家的武器 → 玩家从恨意值拿到的增益」排。
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+
+        // 写进 toml 文件开头的总说明。类注释里那张表玩家看不到（那只在源码里），
+        // 所以这里必须再写一遍——玩家打开文件的第一眼就该知道"这份管什么、另一份在哪"。
+        builder.comment(
+                "Spore Add —— 玩家侧配置。",
+                "",
+                "这一份管「让玩家更强、更好用」的东西。",
+                "让真菌更强的那些在另一份文件里：spore_add-fungus-common.toml",
+                "（真菌加强、恨意值系统、世界恨意值给真菌的减伤、资源、真菌袭击）",
+                "",
+                "本文件的段落：",
+                "  frostNova      冰霜新星：长按右键蓄力的冰系武器",
+                "  liquidCold     液态寒冷：这种流体的影响半径",
+                "  frostSigh      冰雪的叹息：核弹方块",
+                "  playerBuffs    恨意值给玩家的增益（攻击力 / 防御力 / 幸运值 / 减伤 / 最终伤害）",
+                "",
+                "改动在重启游戏、或执行 /reload 之后生效。");
+
         FROST_NOVA = new FrostNova(builder);
         LIQUID_COLD = new LiquidCold(builder);
         FROST_SIGH = new FrostSigh(builder);
+        PLAYER_BUFFS = new PlayerBuffs(builder);
         SPEC = builder.build();
     }
 
-    private SporeAddConfig() {
+    private SporeAddPlayerConfig() {
     }
 
     // ------------------------------------------------------------------
@@ -262,6 +308,62 @@ public final class SporeAddConfig {
         return Math.max(1, FROST_SIGH.mushroomSeconds.get() * 20);
     }
 
+    // ------------------------------------------------------------------
+    // 恨意值给玩家的增益
+    // ------------------------------------------------------------------
+    //
+    // 五项都是「每点换多少 + 封顶」两个数。前三项走原版属性修饰符，后两项走事件，
+    // 具体在哪一层生效见 {@code PlayerHatredBuffs} 的类注释。
+
+    /** 玩家每 1 点个人恨意值换到的基础攻击力。 */
+    public static double buffAttackDamagePerHatred() {
+        return PLAYER_BUFFS.attackDamagePerHatred.get();
+    }
+
+    /** 基础攻击力加成的上限。 */
+    public static double buffMaxAttackDamage() {
+        return PLAYER_BUFFS.maxAttackDamage.get();
+    }
+
+    /** 玩家每 1 点个人恨意值换到的防御力（原版护甲值）。 */
+    public static double buffArmorPerHatred() {
+        return PLAYER_BUFFS.armorPerHatred.get();
+    }
+
+    /** 防御力加成的上限。 */
+    public static double buffMaxArmor() {
+        return PLAYER_BUFFS.maxArmor.get();
+    }
+
+    /** 玩家每 1 点个人恨意值换到的幸运值。 */
+    public static double buffLuckPerHatred() {
+        return PLAYER_BUFFS.luckPerHatred.get();
+    }
+
+    /** 幸运值加成的上限。 */
+    public static double buffMaxLuck() {
+        return PLAYER_BUFFS.maxLuck.get();
+    }
+
+    /** 玩家每 1 点个人恨意值换到的减伤比例。 */
+    public static double buffDamageReductionPerHatred() {
+        return PLAYER_BUFFS.damageReductionPerHatred.get();
+    }
+
+    /** 玩家减伤的上限。不能到 1.0，否则玩家会变成打不死的存在。 */
+    public static double buffMaxDamageReduction() {
+        return PLAYER_BUFFS.maxDamageReduction.get();
+    }
+
+    /** 玩家每 1 点个人恨意值换到的最终伤害加成比例。 */
+    public static double buffFinalDamagePerHatred() {
+        return PLAYER_BUFFS.finalDamagePerHatred.get();
+    }
+
+    /** 玩家最终伤害加成的上限。 */
+    public static double buffMaxFinalDamage() {
+        return PLAYER_BUFFS.maxFinalDamage.get();
+    }
     // ------------------------------------------------------------------
     // 各段配置的定义
     // ------------------------------------------------------------------
@@ -502,6 +604,77 @@ public final class SporeAddConfig {
                             "半径越大球内占比越低（半径 6 约 52%，半径 16 只剩约 12%），再大就几乎抽不到点、",
                             "扩散形同停止。范围判定本身没有这个限制（FrozenChunks 的区块窗口是跟着半径算的）。")
                     .defineInRange("radius", 8, 1, 16);
+
+            builder.pop();
+        }
+    }
+
+    /** 个人恨意值给玩家的增益。 */
+    private static final class PlayerBuffs {
+
+        private final ForgeConfigSpec.DoubleValue attackDamagePerHatred;
+        private final ForgeConfigSpec.DoubleValue maxAttackDamage;
+        private final ForgeConfigSpec.DoubleValue armorPerHatred;
+        private final ForgeConfigSpec.DoubleValue maxArmor;
+        private final ForgeConfigSpec.DoubleValue luckPerHatred;
+        private final ForgeConfigSpec.DoubleValue maxLuck;
+        private final ForgeConfigSpec.DoubleValue damageReductionPerHatred;
+        private final ForgeConfigSpec.DoubleValue maxDamageReduction;
+        private final ForgeConfigSpec.DoubleValue finalDamagePerHatred;
+        private final ForgeConfigSpec.DoubleValue maxFinalDamage;
+
+        private PlayerBuffs(ForgeConfigSpec.Builder builder) {
+            builder.comment("个人恨意值给玩家的增益（恨意值越高越强）。每一项都是「每点换多少 + 封顶」两个数。",
+                            "前四项里，攻击力 / 防御力 / 幸运值走原版属性修饰符，所以会正常参与原版的一切结算；",
+                            "减伤与最终伤害走事件——前者在护甲之前生效，后者在护甲之后生效。",
+                            "**每个倍率系数都很小**（默认 0.001 那一档），因为恨意值是几百到几万的量级：",
+                            "调这一组之前先想清楚你期望的「毕业值」是多少恨意值。")
+                    .push("playerBuffs");
+
+            this.attackDamagePerHatred = builder
+                    .comment("每 1 点个人恨意值换到的基础攻击力。默认 0.001（即 1000 点换 1 点攻击力）。")
+                    .defineInRange("attackDamagePerHatred", 0.001D, 0.0D, 100.0D);
+
+            this.maxAttackDamage = builder
+                    .comment("基础攻击力加成的上限。默认 20.0（约等于一把下界合金剑的伤害量级）。")
+                    .defineInRange("maxAttackDamage", 20.0D, 0.0D, 10000.0D);
+
+            this.armorPerHatred = builder
+                    .comment("每 1 点个人恨意值换到的防御力（原版护甲值）。默认 0.0005（即 2000 点换 1 点）。")
+                    .defineInRange("armorPerHatred", 0.0005D, 0.0D, 100.0D);
+
+            this.maxArmor = builder
+                    .comment("防御力加成的上限。默认 10.0（原版满套装约 20 点）。")
+                    .defineInRange("maxArmor", 10.0D, 0.0D, 10000.0D);
+
+            this.luckPerHatred = builder
+                    .comment("每 1 点个人恨意值换到的幸运值。默认 0.0005（即 2000 点换 1 点）。",
+                            "幸运值影响原版的钓鱼与战利品表判定。")
+                    .defineInRange("luckPerHatred", 0.0005D, 0.0D, 100.0D);
+
+            this.maxLuck = builder
+                    .comment("幸运值加成的上限。默认 5.0。")
+                    .defineInRange("maxLuck", 5.0D, 0.0D, 10000.0D);
+
+            this.damageReductionPerHatred = builder
+                    .comment("每 1 点个人恨意值换到的减伤比例。默认 0.00002（即 25000 点减伤 50%）。")
+                    .defineInRange("damageReductionPerHatred", 0.00002D, 0.0D, 1.0D);
+
+            this.maxDamageReduction = builder
+                    .comment("玩家减伤的上限。0.0 ~ 0.99，默认 0.5。",
+                            "**刻意封在 1.0 以下**：到 1.0 就是完全免疫，玩家会变成打不死的存在。",
+                            "上限 0.99 而不是 1.0，是让「配到顶」仍然留一线。")
+                    .defineInRange("maxDamageReduction", 0.5D, 0.0D, 0.99D);
+
+            this.finalDamagePerHatred = builder
+                    .comment("每 1 点个人恨意值换到的最终伤害加成比例。默认 0.00002（即 25000 点 +50%）。",
+                            "它作用在**护甲与抗性都结算完之后**，所以与「基础攻击力」是两条不同的通路，",
+                            "会互相叠乘而不是重复计入。")
+                    .defineInRange("finalDamagePerHatred", 0.00002D, 0.0D, 1.0D);
+
+            this.maxFinalDamage = builder
+                    .comment("最终伤害加成的上限。默认 0.5（+50%）。")
+                    .defineInRange("maxFinalDamage", 0.5D, 0.0D, 100.0D);
 
             builder.pop();
         }

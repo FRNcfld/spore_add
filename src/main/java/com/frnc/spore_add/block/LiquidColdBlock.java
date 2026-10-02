@@ -2,7 +2,7 @@ package com.frnc.spore_add.block;
 
 import java.util.function.Supplier;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.effect.ColdEffects;
 import com.frnc.spore_add.effect.FrostbiteLevels;
 import com.frnc.spore_add.world.FrostProof;
@@ -36,7 +36,7 @@ import net.minecraft.world.level.material.FlowingFluid;
  * </ol>
  *
  * <p><b>区域效果与冰扩散共用同一个范围和同一个半径</b>，所以"能看到冰的地方"与"会被冻的地方"
- * 始终是同一片区域。半径来自 {@link SporeAddConfig#liquidColdRadius()}——本类与 {@link FrozenChunks}
+ * 始终是同一片区域。半径来自 {@link SporeAddPlayerConfig#liquidColdRadius()}——本类与 {@link FrozenChunks}
  * 都读同一个值，不存在"两处常量要记得一起改"的问题。
  *
  * <h2>为什么用调度刻而不是 randomTick</h2>
@@ -49,7 +49,7 @@ import net.minecraft.world.level.material.FlowingFluid;
  */
 public class LiquidColdBlock extends LiquidBlock {
 
-    // 影响半径不在这里——它来自 SporeAddConfig#liquidColdRadius()，本类与 FrozenChunks 共用同一个值。
+    // 影响半径不在这里——它来自 SporeAddPlayerConfig#liquidColdRadius()，本类与 FrozenChunks 共用同一个值。
     // 是球形而不是立方体：范围判定按欧氏距离（见 FrozenChunks#isWithinRange），冰分层也按同一套距离
     // （见 #iceFor）。
 
@@ -169,7 +169,7 @@ public class LiquidColdBlock extends LiquidBlock {
      */
     private static void spreadIce(ServerLevel level, BlockPos center, RandomSource random) {
         // 一次读出来用整轮：半径配置中途被改的话，至少这一轮用的是同一个值
-        int radius = SporeAddConfig.liquidColdRadius();
+        int radius = SporeAddPlayerConfig.liquidColdRadius();
         for (int attempt = 0; attempt < ATTEMPTS_PER_SECOND; attempt++) {
             int dx = random.nextInt(radius * 2 + 1) - radius;
             int dy = random.nextInt(radius * 2 + 1) - radius;

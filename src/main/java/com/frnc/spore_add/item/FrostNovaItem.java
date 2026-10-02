@@ -2,7 +2,7 @@ package com.frnc.spore_add.item;
 
 import java.util.List;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.entity.FrostNovaEntity;
 import com.frnc.spore_add.sound.ModSounds;
 
@@ -38,7 +38,7 @@ import net.minecraft.world.level.Level;
  * </ul>
  *
  * <h2>威力随蓄力线性变化</h2>
- * 蓄力时长归一化成 0~1 的系数后交给弹体（见 {@link SporeAddConfig#scaledByPower}）：两个半径、
+ * 蓄力时长归一化成 0~1 的系数后交给弹体（见 {@link SporeAddPlayerConfig#scaledByPower}）：两个半径、
  * 冻伤秒数、冻伤层数四项都按它缩放，最低蓄力是满蓄力的 {@code minPowerFraction} 倍。
  * <b>弹道不随蓄力变化</b>——速度是常量。
  *
@@ -68,7 +68,7 @@ public class FrostNovaItem extends Item {
     /**
      * 按住 Shift 时展开详细数值，否则只给一行提示。
      *
-     * <p><b>所有数字都是现读配置的</b>，不是写死的文案——改了 {@code config/spore_add-common.toml}
+     * <p><b>所有数字都是现读配置的</b>，不是写死的文案——改了 {@code config/spore_add-player-common.toml}
      * 里的任何一个旋钮，这里显示的范围、秒数、层数都会跟着变。所以它同时也是一份"当前生效参数"的自检面板。
      */
     @Override
@@ -79,25 +79,25 @@ public class FrostNovaItem extends Item {
             return;
         }
 
-        double speed = SporeAddConfig.frostNovaSpeed();
-        int fuseTicks = SporeAddConfig.frostNovaAutoDetonateTicks();
+        double speed = SporeAddPlayerConfig.frostNovaSpeed();
+        int fuseTicks = SporeAddPlayerConfig.frostNovaAutoDetonateTicks();
         double range = speed * fuseTicks;
-        float power = SporeAddConfig.frostNovaExplosionPower(1.0D);
+        float power = SporeAddPlayerConfig.frostNovaExplosionPower(1.0D);
 
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.range",
                 trim(speed), fuseTicks / 20, trim(range));
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.impact",
-                SporeAddConfig.frostNovaBlockRadius(), SporeAddConfig.frostNovaEntityRadius());
+                SporeAddPlayerConfig.frostNovaBlockRadius(), SporeAddPlayerConfig.frostNovaEntityRadius());
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.frostbite",
-                SporeAddConfig.frostNovaFrostbiteSeconds(), SporeAddConfig.frostNovaFrostbiteLevel());
+                SporeAddPlayerConfig.frostNovaFrostbiteSeconds(), SporeAddPlayerConfig.frostNovaFrostbiteLevel());
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.explosion",
                 trim(power), trim(power * 2.0D));
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.secondary",
-                SporeAddConfig.frostNovaSecondaryDelayTicks() / 20,
-                trim(SporeAddConfig.frostNovaSecondaryRangeMultiplier()),
-                trim(SporeAddConfig.frostNovaSecondaryPowerMultiplier()));
+                SporeAddPlayerConfig.frostNovaSecondaryDelayTicks() / 20,
+                trim(SporeAddPlayerConfig.frostNovaSecondaryRangeMultiplier()),
+                trim(SporeAddPlayerConfig.frostNovaSecondaryPowerMultiplier()));
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.charge",
-                SporeAddConfig.frostNovaChargeTicks(), SporeAddConfig.frostNovaMinChargeTicks());
+                SporeAddPlayerConfig.frostNovaChargeTicks(), SporeAddPlayerConfig.frostNovaMinChargeTicks());
     }
 
     /** 去掉多余的小数位：1.5 显示成 "1.5"、2.0 显示成 "2"。 */
@@ -140,11 +140,11 @@ public class FrostNovaItem extends Item {
             return;
         }
         int charge = getUseDuration(stack) - remainingUseDuration;
-        if (charge < SporeAddConfig.frostNovaMinChargeTicks()
+        if (charge < SporeAddPlayerConfig.frostNovaMinChargeTicks()
                 || charge % CHARGE_SOUND_INTERVAL_TICKS != 0) {
             return;
         }
-        float progress = Math.min(1.0F, (float) charge / SporeAddConfig.frostNovaChargeTicks());
+        float progress = Math.min(1.0F, (float) charge / SporeAddPlayerConfig.frostNovaChargeTicks());
         level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                 ModSounds.FROST_NOVA_CHARGING.get(), SoundSource.PLAYERS, 0.5F, 0.6F + progress);
     }
@@ -156,7 +156,7 @@ public class FrostNovaItem extends Item {
         }
 
         int charge = getUseDuration(stack) - timeLeft;
-        if (charge < SporeAddConfig.frostNovaMinChargeTicks()) {
+        if (charge < SporeAddPlayerConfig.frostNovaMinChargeTicks()) {
             return;   // 蓄力不足，静默取消（与弓"拉不满不发"一致）
         }
 
@@ -167,7 +167,7 @@ public class FrostNovaItem extends Item {
             return;
         }
 
-        double power = Math.min(1.0D, (double) charge / SporeAddConfig.frostNovaChargeTicks());
+        double power = Math.min(1.0D, (double) charge / SporeAddPlayerConfig.frostNovaChargeTicks());
         level.addFreshEntity(new FrostNovaEntity(level, player, power));
 
         // 音调随威力升高，满蓄力听起来更"满"

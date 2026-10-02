@@ -46,13 +46,14 @@ public final class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> SPORE_ADD_TAB =
             CREATIVE_MODE_TABS.register("spore_add", () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + SporeAdd.MOD_ID))
-                    .icon(() -> new ItemStack(ModItems.COOLANT_BUCKET.get()))
+                    .icon(() -> new ItemStack(ModItems.FROST_SIGH.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.COOLANT_BUCKET.get());
                         output.accept(ModItems.LIQUID_COLD_BUCKET.get());
                         output.accept(ModItems.HIGH_ENERGY_FUEL_BUCKET.get());
                         output.accept(ModItems.FROST_NOVA.get());
                         output.accept(ModItems.FROST_SIGH.get());
+                        output.accept(ModItems.SCAVENGER_SPAWN_EGG.get());
                         // 附魔书不是注册项，得自己构造出来
                         output.accept(warmthBook());
                     })

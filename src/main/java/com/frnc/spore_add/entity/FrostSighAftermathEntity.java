@@ -1,6 +1,6 @@
 package com.frnc.spore_add.entity;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.compat.SporeCompat;
 import com.frnc.spore_add.particle.ModParticles;
 import com.frnc.spore_add.world.FrostSighChunks;
@@ -110,8 +110,8 @@ public class FrostSighAftermathEntity extends Entity {
         aftermath.setPos(center.getX() + 0.5D, center.getY() + 0.5D, center.getZ() + 0.5D);
 
         long now = level.getGameTime();
-        int snowTicks = Math.max(1, SporeAddConfig.frostSighSnowTicks());
-        int mistTicks = Math.max(1, SporeAddConfig.frostSighMistTicks());
+        int snowTicks = Math.max(1, SporeAddPlayerConfig.frostSighSnowTicks());
+        int mistTicks = Math.max(1, SporeAddPlayerConfig.frostSighMistTicks());
 
         aftermath.spawnGameTime = now;
         aftermath.snowExpiresAt = now + snowTicks;
@@ -191,8 +191,8 @@ public class FrostSighAftermathEntity extends Entity {
      */
     private double currentMistRadius(ServerLevel server) {
         long since = server.getGameTime() - spawnGameTime
-                - SporeAddConfig.frostSighSecondRingDelayTicks();
-        int ticks = SporeAddConfig.frostSighShockwaveTicks();
+                - SporeAddPlayerConfig.frostSighSecondRingDelayTicks();
+        int ticks = SporeAddPlayerConfig.frostSighShockwaveTicks();
         double progress = Mth.clamp((double) since / ticks, 0.0D, 1.0D);
         return getRadius() * progress;
     }
@@ -212,8 +212,8 @@ public class FrostSighAftermathEntity extends Entity {
         if (mistRadius <= 0.0D) {
             return;   // 2 号环还没起跑
         }
-        int amplifier = Math.max(0, Math.min(126, SporeAddConfig.frostSighFrostbiteLevel() - 1));
-        int duration = SporeAddConfig.frostSighFrostbiteTicks();
+        int amplifier = Math.max(0, Math.min(126, SporeAddPlayerConfig.frostSighFrostbiteLevel() - 1));
+        int duration = SporeAddPlayerConfig.frostSighFrostbiteTicks();
 
         Vec3 center = position();
         double limitSqr = mistRadius * mistRadius;
@@ -281,8 +281,8 @@ public class FrostSighAftermathEntity extends Entity {
 
     /** 客户端的雾半径：与服务端 {@link #currentMistRadius} 同一个算式。 */
     private double currentMistRadiusClient(int elapsed) {
-        long since = elapsed - SporeAddConfig.frostSighSecondRingDelayTicks();
-        int ticks = SporeAddConfig.frostSighShockwaveTicks();
+        long since = elapsed - SporeAddPlayerConfig.frostSighSecondRingDelayTicks();
+        int ticks = SporeAddPlayerConfig.frostSighShockwaveTicks();
         return getRadius() * Mth.clamp((double) since / ticks, 0.0D, 1.0D);
     }
 

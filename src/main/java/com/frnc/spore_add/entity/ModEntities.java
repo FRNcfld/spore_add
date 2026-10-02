@@ -1,10 +1,14 @@
 package com.frnc.spore_add.entity;
 
 import com.frnc.spore_add.SporeAdd;
+import com.frnc.spore_add.scavenger.Scavenger;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -22,9 +26,11 @@ import net.minecraftforge.registries.RegistryObject;
  * <p>粒子云的碰撞箱刻意保持 {@code 0.5 × 0.5} 的固定小方块，<b>不</b>随云的球半径变大；
  * 理由见 {@link FrostNovaCloudEntity} 的类注释。
  *
- * <p>这两个都<b>不需要</b> {@code EntityAttributeCreationEvent}——那个事件的参数类型是
- * {@code EntityType<? extends LivingEntity>}，只对生物有意义。
+ * <p>这几个投射物与粒子云都<b>不需要</b> {@code EntityAttributeCreationEvent}——那个事件的参数类型是
+ * {@code EntityType<? extends LivingEntity>}，只对生物有意义。本类里唯一需要它的是
+ * {@link #SCAVENGER}，见那边的注释。
  */
+@Mod.EventBusSubscriber(modid = SporeAdd.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class ModEntities {
 
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
@@ -135,7 +141,36 @@ public final class ModEntities {
     private ModEntities() {
     }
 
+    /**
+     * 「拾荒者」——菌染人类的变体，见 {@link Scavenger}。
+     *
+     * <p>尺寸与 {@code spore:inf_human} 一致（僵尸那套 {@code 0.6 × 1.95}）。它<b>不</b>走
+     * {@link MobCategory#MISC}：这是个真正的生物，要参与生物生成上限、也会被 Spore 的
+     * Despawning System 一起统计（后者可能会把它清掉，见配置注释里的建议）。
+     */
+    public static final RegistryObject<EntityType<Scavenger>> SCAVENGER =
+            ENTITY_TYPES.register("scavenger", () -> EntityType.Builder
+                    .<Scavenger>of(Scavenger::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.95F)
+                    .clientTrackingRange(8)
+                    .build("spore_add:scavenger"));
+
     public static void register(IEventBus modEventBus) {
         ENTITY_TYPES.register(modEventBus);
+    }
+
+    /**
+     * 给拾荒者绑属性。
+     *
+     * <p>本类里只有这一个实体是 {@code LivingEntity}，所以这是唯一一处
+     * {@code EntityAttributeCreationEvent}——上面那几个投射物与粒子云都不需要它
+     * （那个事件只对生物有意义）。
+     *
+     * <p>属性表直接转交 {@code InfectedHuman.createAttributes()}，所以血量、伤害、护甲、
+     * 感知范围、击退抗性与菌染人类逐项一致。
+     */
+    @SubscribeEvent
+    public static void onEntityAttributes(EntityAttributeCreationEvent event) {
+        event.put(SCAVENGER.get(), Scavenger.createAttributes().build());
     }
 }

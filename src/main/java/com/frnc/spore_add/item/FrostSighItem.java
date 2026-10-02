@@ -2,7 +2,7 @@ package com.frnc.spore_add.item;
 
 import java.util.List;
 
-import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
@@ -41,16 +41,16 @@ public class FrostSighItem extends BlockItem {
         }
 
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_sigh.area",
-                SporeAddConfig.frostSighRadius());
+                SporeAddPlayerConfig.frostSighRadius());
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_sigh.countdown",
-                SporeAddConfig.frostSighCountdownTicks() / 20,
-                SporeAddConfig.frostSighShockwaveTicks() / 20);
+                SporeAddPlayerConfig.frostSighCountdownTicks() / 20,
+                SporeAddPlayerConfig.frostSighShockwaveTicks() / 20);
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_sigh.frostbite",
-                SporeAddConfig.frostSighFrostbiteLevel(),
-                SporeAddConfig.frostSighFrostbiteTicks() / TICKS_PER_MINUTE,
-                SporeAddConfig.frostSighFrozenTicks() / 20);
+                SporeAddPlayerConfig.frostSighFrostbiteLevel(),
+                SporeAddPlayerConfig.frostSighFrostbiteTicks() / TICKS_PER_MINUTE,
+                SporeAddPlayerConfig.frostSighFrozenTicks() / 20);
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_sigh.snow",
-                SporeAddConfig.frostSighSnowTicks() / TICKS_PER_MINUTE);
+                SporeAddPlayerConfig.frostSighSnowTicks() / TICKS_PER_MINUTE);
         ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_sigh.activate");
     }
 }
