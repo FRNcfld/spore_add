@@ -1,0 +1,24 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 500,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:living_boots"
+    },
+    {
+      "item": "spore:plated_boots"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:inf_boots"
+    }
+  ]
+}

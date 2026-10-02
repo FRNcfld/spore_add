@@ -1,0 +1,22 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:mycelium_block"
+    }
+  ],
+  "processingTime": 400,
+  "results": [
+    {
+      "chance": 0.5,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:claw_fragment"
+    }
+  ]
+}

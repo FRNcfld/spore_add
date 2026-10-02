@@ -1,0 +1,30 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 175,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:living_core"
+    },
+    {
+      "item": "spore:fleshy_claw"
+    },
+    {
+      "item": "spore:claw"
+    },
+    {
+      "item": "spore:tendons"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:infected_bow"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "damage": 5,
+  "reload_ticks": 10,
+  "items": "create:copper_nugget",
+  "knockback": 0.3,
+  "render_mode": {
+    "type": "create:toward_motion"
+  },
+  "sound_pitch": 1.5,
+  "velocity_multiplier": 10.0
+}

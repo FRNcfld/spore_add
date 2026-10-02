@@ -1,0 +1,69 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "minecraft:glass_bottle"
+  },
+  "loops": 2,
+  "results": [
+    {
+      "item": "spore:integrating_agent"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:glass_bottle"
+        },
+        [
+          {
+            "item": "minecraft:sugar"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:glass_bottle"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:glass_bottle"
+        },
+        [
+          {
+            "item": "spore:nerves"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:glass_bottle"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "minecraft:glass_bottle"
+        }
+      ],
+      "results": [
+        {
+          "item":"minecraft:glass_bottle"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "minecraft:glass_bottle"
+  }
+}

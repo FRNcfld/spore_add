@@ -1,0 +1,13 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "minecraft:smelting",
+  "category": "food",
+  "cookingtime": 100,
+  "experience": 0.0,
+  "ingredient": {
+    "item": "spore:frozen_decayed_biomass"
+  },
+  "result": "spore:biomass"
+}

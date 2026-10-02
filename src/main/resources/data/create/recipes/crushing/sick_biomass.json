@@ -1,0 +1,49 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:sicken_biomass_block"
+    }
+  ],
+  "processingTime": 150,
+  "results": [
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:mutated_fiber"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.1,
+      "item": "spore:alveolic_sack"
+    },
+    {
+      "chance": 0.05,
+      "item": "spore:altered_spleen"
+    },
+    {
+      "chance": 0.2,
+      "item": "spore:corrosive_sack"
+    },
+    {
+      "chance": 0.10,
+      "item": "spore:sicken_tumor"
+    },
+    {
+      "chance": 0.02,
+      "item": "spore:reforged_biomass_w"
+    }
+  ]
+}

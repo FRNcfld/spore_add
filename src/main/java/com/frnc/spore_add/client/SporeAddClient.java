@@ -130,15 +130,6 @@ public final class SporeAddClient {
                 sprites -> FrostMoteParticle.provider(sprites, 1.6F, 0.80F, 40, 70, 0.0F));
         event.registerSpriteSet(ModParticles.FROST_SIGH_FLARE.get(),
                 sprites -> FrostMoteParticle.provider(sprites, 1.2F, 0.90F, 20, 40, 0.05F));
-        // 倒计时的"梦幻"三件套（见 ModParticles 里的说明）：
-        // 环最大最透、活得最久，负责"一圈圈扩散"；闪光小而亮、寿命中等，负责"闪"；
-        // 柔光团居中，缓慢上浮（负重力），负责把整团东西提亮。
-        event.registerSpriteSet(ModParticles.FROST_SIGH_RING.get(),
-                sprites -> FrostMoteParticle.provider(sprites, 2.8F, 0.55F, 30, 60, -0.006F));
-        event.registerSpriteSet(ModParticles.FROST_SIGH_SPARKLE.get(),
-                sprites -> FrostMoteParticle.provider(sprites, 1.0F, 0.85F, 40, 80, -0.012F));
-        event.registerSpriteSet(ModParticles.FROST_SIGH_GLOW.get(),
-                sprites -> FrostMoteParticle.provider(sprites, 2.2F, 0.38F, 60, 110, -0.008F));
         event.registerSpriteSet(ModParticles.FROST_SIGH_SNOW.get(),
                 sprites -> FrostMoteParticle.provider(sprites, 0.4F, 0.90F, 40, 80, -0.01F));
         // 警示粒子：透明度压到 0.45、寿命也短，做出"淡淡的"效果。

@@ -1,0 +1,36 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "item": "spore:living_core"
+    },
+    {
+      "amount": 250,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:corrosive_sack"
+    },
+    {
+      "item": "spore:claw"
+    },
+    {
+      "item": "spore:fleshy_claw"
+    },
+    {
+      "item": "spore:fleshy_claw"
+    },
+    {
+      "item": "spore:mutated_fiber"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:rapier"
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "minecraft:iron_sword"
+  },
+  "loops": 2,
+  "results": [
+    {
+      "item": "spore:reaver"
+    }
+  ],
+  "sequence": [
+
+
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "minecraft:light_blue_dye"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "spore:compound_plate"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+            {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "minecraft:iron_ingot"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "spore:compound_plate"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ],
+      "results": [
+        {
+          "item":"minecraft:iron_sword"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "minecraft:iron_sword"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "amount": 100,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:claw_fragment"
+    },
+    {
+      "item": "spore:mutated_fiber"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:knife"
+    }
+  ]
+}

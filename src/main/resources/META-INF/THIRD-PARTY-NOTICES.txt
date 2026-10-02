@@ -1,4 +1,4 @@
-本工程 assets/spore_add/textures/particle/ 下的以下 13 个粒子贴图不是原创，来自第三方 MIT 许可的素材库：
+本工程 assets/spore_add/textures/particle/ 下的以下 11 个粒子贴图不是原创，来自第三方 MIT 许可的素材库：
 
     冰霜新星用：
     frost_mist.png          （素材原名 nebula 系列之外的 frost_mist）
@@ -12,11 +12,6 @@
     frost_sigh_flare.png    （素材原名 abyss_flare）
     frost_sigh_snow.png     （素材原名 frost_mote_0）
     frost_sigh_warning.png  （素材原名 ember_mote_2）
-
-    冰雪的叹息·倒计时的"梦幻"三件套（见 ModParticles 里那一段）：紫蓝系，与核弹同一族
-    frost_sigh_ring.png     （素材原名 pulse_ring）
-    frost_sigh_sparkle.png  （素材原名 frost_sparkle）
-    frost_sigh_glow.png     （素材原名 star_river_glow）
 
     frost_sigh_mist.png     ★ 这一张是**派生作品**，不是原样拷贝：
                             取自 frost_mist.png，只把颜色改成深蓝（色相 232°、饱和度 0.85、

@@ -1,0 +1,34 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:compacting",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "item": "spore:living_core"
+    },
+    {
+      "amount": 250,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:armor_plate"
+    },
+    {
+      "item": "spore:armor_plate"
+    },
+    {
+      "item": "spore:shield_fragment"
+    },
+    {
+      "item": "spore:shield_fragment"
+    }
+    
+  ],
+  "results": [
+    {
+      "item": "spore:shield"
+    }
+  ]
+}

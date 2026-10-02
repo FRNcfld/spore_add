@@ -1,0 +1,33 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:compacting",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 200,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:armor_plate"
+    },
+    {
+      "item": "spore:armor_plate"
+    },
+    {
+      "item": "spore:spine_fragment"
+    },
+    {
+      "item": "spore:armor_fragment"
+    },
+    {
+      "item": "spore:armor_fragment"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:plated_helmet"
+    }
+  ]
+}

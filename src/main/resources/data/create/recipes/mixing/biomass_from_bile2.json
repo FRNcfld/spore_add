@@ -1,0 +1,30 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "tag": "create:raw_meat2"
+    },
+    {
+      "amount": 50,
+      "fluid": "spore:bile",
+      "nbt": {}
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:biomass"
+    },     
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "item": "spore:biomass"
+    }
+  ]
+}

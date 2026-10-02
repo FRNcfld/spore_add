@@ -46,9 +46,10 @@
   所以是"同一种雾、更浓、更深"。这团云**从方块往外扩散**，
   但整个云始终关在**半径 4 格**的球里——刚激活时贴着方块，越接近爆发铺得越开，到爆发那一刻铺满。
 
-  > 曾经在雾上叠过一层"梦幻三件套"（紫蓝色光环 / 闪光 / 柔光团，`frost_sigh_ring` / `_sparkle` / `_glow`），
+  > 曾经在雾上叠过一层"梦幻三件套"（紫蓝色光环 / 闪光 / 柔光团），
   > 但光环与柔光团的体量比雾还大，会把雾整个盖住——结果就看不出"这是那团雾"了。
-  > 那三个粒子仍留在注册表里（贴图与注册都在），只是倒计时不再使用。
+  > 那三个粒子后来在整理时删掉了（贴图、粒子 JSON、注册与 provider 一并移除），
+  > 要恢复的话从 git 历史里取。
 - 爆发时推出**两圈冲击环**，半径与推进速度完全一样，2 号环晚 `secondRingDelaySeconds` 秒（默认 2）起跑：
 
   | | 1 号环 | 2 号环 |
@@ -271,6 +272,36 @@
 > 然后无条件 `setBlock` 盖冰。传送门是不挡视线的非固体方块，高度图根本看不见它，
 > 所以一发核弹会把它连冰埋掉。现在四处都走 `FrostProof.isProtected`。
 
+**Create 联动**（随本 mod 内置的一整套数据包，`src/main/resources/data/create/`）：
+
+把 Spore 的材料接进 Create 的机器，共 **101 个配方 + 3 个土豆弹射物类型 + 5 个物品标签**：
+
+| Create 工艺 | 数量 | 例子 |
+|---|---|---|
+| `mixing` | 51 | 胆汁 + 若干腺体 → 各种试剂 |
+| `sequenced_assembly` | 12 | 盔甲板、骑士盾一类 |
+| `compacting` / `crushing` | 11 / 11 | 生物质块压成材料 / 砸成碎片 |
+| `milling` | 10 | 研磨真菌方块 |
+| `filling` / `emptying` / `haunting` / `smelting` | 各 1~3 | 胆汁、生物质↔冻伤生物质等 |
+
+三点值得说明：
+
+- **它落在 `create` 命名空间下**（配方 id 是 `create:crushing/biomass_block` 这种）。这是数据包本来的写法——
+  跨模组联动只能这样写，本 mod 只是在替它分发。**已核对过：与 Create 自带的 101 个配方 id
+  <b>零冲突</b>，不会覆盖 Create 的任何东西。**
+- **标签是追加不是覆盖**：`blaze_burner_fuel/regular` 等文件都没有 `replace: true`，
+  所以是往 Create 原有的燃料表里加 `spore:bile_vial`、`spore:gastric_biomass_block`。
+- **每个配方都带一条 `"conditions": [{"type": "forge:mod_loaded", "modid": "create"}]`**，
+  所以没装 Create 的人**不会**在日志里看到一堆 `Unknown recipe type`
+  （Forge 在 `RecipeManager` 里读顶层这个键，条件不满足就跳过，只记一行 debug）。
+  这 101 条是后来批量补上的——原包没有，没装 Create 时会刷 101 行 error。
+
+> **同一批素材的 `data/spore/`（28 个文件）与 `data/inqui/`（62 个文件）没有并进来。**
+> 它们不是新增内容，而是**覆盖别人 mod 的世界生成**（Spore 的 23 个结构模板 + 4 个世界生成 JSON；
+> Inqui 的整套结构与模板池）。其中 `data/spore/` 那部分把 `spore:biomass_tower` 的生物群系
+> 改成了 `inqui:wastes`——并进来就等于要求玩家同时装 Inqui，没装的话 Spore 的生化塔会完全不生成。
+> 素材包仍在 `E:\文件\MC\modfix\1\有用\`。
+
 改动前建议先读这几处的注释，它们记录了不显然的约束：`SporeFluidType`（流体视野效果的契约）、`ModFluids`（为什么不入 `fluids/water` 标签）、`ColdEffects`（寒冷效果为什么必须由实体自己的 tick 施加）、`FrostNovaEntity`（为什么必须自己封一个寿命）、`FrostNovaCloudEntity`（为什么不用现成的 `AreaEffectCloud`）、`FrostMoteParticle`（粒子为什么必须覆写 `getRenderType`）、`SporeAddConfig`（配置值为什么不能放进静态字段）。
 
 ## 配置
@@ -324,31 +355,34 @@
 ## 目录结构
 
 ```
-src/main/java/com/frnc/spore_add/
-├── SporeAdd.java       # 主入口（@Mod）：登记各注册表、注册配置与进度判据
-├── SporeAddConfig.java # 配置（冰霜新星的威力参数、液态寒冷半径）
-├── fluid/              # 三种流体的 FluidType 与静置/流动变体
-├── block/              # 三种流体方块（各自带接触效果）
-├── item/               # 三个桶 + 冰霜新星 + 本 mod 的创造模式页签
-├── entity/             # 两个爆炸的弹体 / 粒子云 / 延时炸弹 / 冲击环 / 冰壳 / 蘑菇云 / 爆后残留，及其注册表
-├── particle/           # 三个霜冻粒子的类型注册表
-├── effect/             # 可燃/爆燃/冻伤的等级记账与伤害算式
-├── enchantment/        # 「烈阳」附魔与其"是否穿戴"的唯一判定
-├── advancement/        # 自定义进度判据（装上烈阳）
-├── event/              # Forge 事件处理
-├── network/            # 等级同步包（服务端 → 客户端显示）
-├── client/             # 客户端：阿拉伯数字等级、流体滤镜与雾、弹体渲染器与蓄力属性
-│   └── particle/       # 客户端：霜冻粒子的渲染实现
-├── compat/             # Spore 的唯一引用点
-├── world/              # 液态寒冷的影响范围登记（冰不融化也用它）、冰霜新星的落点爆发
-└── mixin/              # mixin 包，对应 spore_add.mixins.json 的 package
+src/main/java/com/frnc/spore_add/               （67 个类）
+├── SporeAdd.java        # 主入口（@Mod）：登记各注册表、注册配置与进度判据
+├── SporeAddConfig.java  # 配置：frostNova / frostSigh / liquidCold 三段，每段一个嵌套类
+├── fluid/ (4)           # 三种流体的 FluidType 与静置/流动变体，以及岩浆接触表
+├── block/ (7)           # 三种流体方块 + 「冰雪的叹息」方块及其 BlockEntity、方块实体注册表
+├── item/ (5)            # 三个桶 + 冰霜新星 + 冰雪的叹息 + 本 mod 的创造模式页签
+├── entity/ (8)          # 两个爆炸的弹体 / 粒子云 / 延时炸弹 / 冲击环 / 蘑菇云 / 爆后残留 / 冰壳，及其注册表
+├── particle/ (1)        # 11 个粒子类型的注册表
+├── effect/ (6)          # 可燃/爆燃/冻伤的等级记账与伤害算式
+├── enchantment/ (3)     # 「烈阳」附魔与其"算不算数"的唯一判定点
+├── advancement/ (2)     # 自定义进度判据（装上烈阳）
+├── event/ (1)           # Forge 事件处理
+├── network/ (2)         # 等级同步包（服务端 → 客户端显示）
+├── sound/ (1)           # 声音事件注册表（只借原版音频、自带字幕）
+├── client/ (7)          # 客户端：等级缓存与显示、流体滤镜与雾、两个实体渲染器、客户端入口
+│   └── particle/ (1)    # 客户端：全部粒子的渲染实现（共用一个类，只是参数不同）
+├── compat/ (1)          # Spore 的唯一引用点
+├── world/ (6)           # 世界改写：两个爆炸的落点逻辑、CDU 清真菌、受保护方块名单、区块票
+└── mixin/ (10)          # 对应 spore_add.mixins.json 的 package
 src/main/resources/
-├── META-INF/mods.toml     # 模组元数据（modId/版本/作者/依赖）
-├── pack.mcmeta            # 资源包描述
-├── spore_add.mixins.json  # mixin 配置（通用 6 个 + 客户端 3 个）
-├── assets/spore_add/      # 贴图、模型、方块状态、粒子定义、语言文件
-├── data/spore_add/        # 两个进度：绝对零度（根）、永恒炽阳；以及方块掉落表
-└── data/minecraft/        # 只放方块标签：把 frost_sigh 挂进 mineable/pickaxe 与 needs_diamond_tool
+├── META-INF/mods.toml                # 模组元数据（modId/版本/作者/依赖）
+├── META-INF/THIRD-PARTY-NOTICES.txt  # 第三方粒子贴图的署名与 MIT 全文
+├── pack.mcmeta                       # 资源包描述
+├── spore_add.mixins.json             # mixin 配置（通用 7 个 + 客户端 3 个）
+├── assets/spore_add/                 # 贴图、模型、方块状态、粒子定义、语言文件
+├── data/spore_add/                   # 两个进度、方块掉落表、frost_proof 受保护方块标签
+├── data/minecraft/                   # 只放方块标签：把 frost_sigh 挂进 mineable/pickaxe 与 needs_diamond_tool
+└── data/create/                      # Create 联动（见上「Create 联动」一节）
 ```
 
 冰霜新星的物品贴图（`textures/item/frost_nova*.png`，4 张，**32×32**）最初是脚本逐像素生成的 16×16 产物
@@ -358,7 +392,8 @@ src/main/resources/
 之所以是"忠实放大"而不是重新画：16×16 的信息量就那么多，重画出来是另一朵雪花，那属于改设计而不是换分辨率。
 模型侧不需要跟着改——四张贴图都由 `minecraft:item/generated` 的 `layer0` 引用，那个父模型会把贴图拉伸填满格子。
 
-粒子贴图（`textures/particle/`，3 张，32×32）来自第三方素材库，**不是本工程原创**，
+粒子贴图（`textures/particle/`，**11 张**，32×32）来自第三方素材库，**不是本工程原创**
+（其中 `frost_sigh_mist` 与 `frost_sigh_flake` 是在原图基础上重上色的派生作品），
 署名与 MIT 许可全文见 `META-INF/THIRD-PARTY-NOTICES.txt`。
 
 > 那份说明刻意放在 `META-INF/` 而不是贴图旁边：资源包加载器会扫描 `textures/` 下的**每一个**文件，
@@ -404,7 +439,7 @@ src/main/resources/
 - **注册内容**：每个功能子包（`fluid` / `block` / `item` / `effect` / `enchantment`）自己持有 `DeferredRegister` 并提供一个 `register(IEventBus)`，由 `SporeAdd` 的构造函数逐个调用。
 - **事件**：`MinecraftForge.EVENT_BUS.register(this)` 已在主类里接好，直接加 `@SubscribeEvent` 方法即可。
 - **配置**：`SporeAddConfig` 用 `ForgeConfigSpec`（`COMMON` 类型），生成 `config/spore_add-common.toml`。新增可调项加在那里，并且**取值只放在访问器的方法体里**，不要写成 `static final` 字段——配置的加载时机晚于方块/物品的构造。另外注意 `gradle.properties` 被 Gradle 以 ISO-8859-1 读取，中文别放那里（配置的注释写在 Java 源码里，没这个问题）。
-- **mixin**：MixinGradle 管线（含 refmap 与开发环境 `mixin.env.remapRefMap`）已接好，现有 9 个 mixin。新增时把类名登记进 `spore_add.mixins.json` 的 `"mixins"`（通用）或 `"client"`（仅客户端）列表——**漏登记的典型症状是"编译进 jar 但运行时不生效"**。客户端专用的混入必须放进 `client` 列表，否则服务端加载到只存在于客户端的类会直接崩。
+- **mixin**：MixinGradle 管线（含 refmap 与开发环境 `mixin.env.remapRefMap`）已接好，现有 10 个 mixin。新增时把类名登记进 `spore_add.mixins.json` 的 `"mixins"`（通用）或 `"client"`（仅客户端）列表——**漏登记的典型症状是"编译进 jar 但运行时不生效"**。客户端专用的混入必须放进 `client` 列表，否则服务端加载到只存在于客户端的类会直接崩。
 - **Access Transformer**：需要公开原版私有成员时，在 `build.gradle` 里取消 `accessTransformer = file(...)` 的注释并新建 `src/main/resources/META-INF/accesstransformer.cfg`（保持纯 ASCII）。
 
 ## 许可证

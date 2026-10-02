@@ -1,0 +1,39 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:fungal_shell"
+    }
+  ],
+  "processingTime": 1000,
+  "results": [
+    {
+      "item": "spore:armor_fragment"
+    },
+    {
+      "item": "spore:armor_fragment"
+    },
+    {
+      "item": "spore:claw_fragment"
+    },
+    {
+      "chance": 0.3,
+      "item": "spore:claw"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:armor_plate"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:spike"
+    },
+    {
+      "chance": 0.1,
+      "item": "spore:biomass"
+    }
+  ]
+}

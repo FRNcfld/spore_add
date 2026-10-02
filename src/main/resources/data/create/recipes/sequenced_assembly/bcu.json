@@ -1,0 +1,89 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:sequenced_assembly",
+  "ingredient": 
+  {
+    "item": "spore:compound_plate"
+  },
+  "loops": 1,
+  "results": [
+    {
+      "item": "spore:container"
+    }
+  ],
+  "sequence": [
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "spore:compound_plate"
+        },
+        [
+          {
+            "item": "spore:compound_plate"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "spore:compound_plate"
+        }
+      ]
+    },
+    {
+      "type": "create:filling",
+      "ingredients": [
+        {
+          "item": "spore:compound_plate"
+        },
+        
+          {
+          "amount": 500,
+          "fluid": "minecraft:water"
+          }
+        
+      ],
+      "results": [
+        {
+          "item": "spore:compound_plate"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "spore:compound_plate"
+        },
+        [
+          {
+            "item": "minecraft:glass"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "spore:compound_plate"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "spore:compound_plate"
+        }
+      ],
+      "results": [
+        {
+          "item":"spore:compound_plate"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "spore:compound_plate"
+  }
+}

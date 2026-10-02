@@ -1,0 +1,30 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "item": "spore:mutated_fiber"
+    },
+    {
+      "amount": 100,
+      "fluid": "spore:bile",
+      "nbt": {}
+    },
+    {
+      "item": "spore:nerves"
+    },
+    {
+      "item": "spore:mutated_heart"
+    },
+    {
+      "item": "spore:living_core"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:symbiotic_reagent"
+    }
+  ]
+}

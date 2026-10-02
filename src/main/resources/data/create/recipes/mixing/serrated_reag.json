@@ -1,0 +1,30 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "item": "spore:spike"
+    },
+    {
+      "amount": 100,
+      "fluid": "spore:bile",
+      "nbt": {}
+    },
+    {
+      "item": "spore:corrosive_sack"
+    },
+    {
+      "item": "spore:spike"
+    },
+    {
+      "item": "spore:living_core"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:serrated_reagent"
+    }
+  ]
+}

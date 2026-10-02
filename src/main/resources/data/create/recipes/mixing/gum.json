@@ -1,0 +1,33 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "item": "spore:tendons"
+    },
+    {
+      "amount": 200,
+      "fluid": "minecraft:water",
+      "nbt": {}
+    },
+    {
+      "item": "minecraft:sugar"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:tendon_gum"
+    },     
+    {
+      "item": "spore:tendon_gum"
+    },
+    {
+      "item": "spore:tendon_gum"
+    },
+    {
+      "item": "spore:tendon_gum"
+    }
+  ]
+}

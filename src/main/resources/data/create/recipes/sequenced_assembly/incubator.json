@@ -1,0 +1,124 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "spore:container"
+  },
+  "loops": 1,
+  "results": [
+    {
+      "item": "spore:incubator"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "spore:container"
+        },
+        [
+          {
+            "item": "spore:circuit_board"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "spore:container"
+        }
+      ]
+    },
+
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "spore:container"
+        },
+        [
+          {
+            "item": "minecraft:redstone"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "spore:container"
+        }
+      ]
+    },
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "spore:container"
+        },
+        [
+          {
+            "item": "minecraft:redstone"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "spore:container"
+        }
+      ]
+    },
+            {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "spore:container"
+        },
+        [
+          {
+            "item": "minecraft:iron_ingot"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "spore:container"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "spore:container"
+        },
+        [
+          {
+            "item": "minecraft:iron_ingot"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "spore:container"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "spore:container"
+        }
+      ],
+      "results": [
+        {
+          "item":"spore:container"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "spore:container"
+  }
+}

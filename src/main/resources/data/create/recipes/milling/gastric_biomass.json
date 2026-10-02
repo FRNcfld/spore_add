@@ -1,0 +1,29 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:milling",
+  "ingredients": [
+    {
+      "item": "spore:gastric_biomass_block"
+    }
+  ],
+  "processingTime": 75,
+  "results": [
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:mutated_fiber"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:crusted_bile"
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "minecraft:string"
+  },
+  "loops": 1,
+  "results": [
+    {
+      "item": "spore:gas_mask"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:string"
+        },
+        [
+          {
+            "item": "minecraft:iron_ingot"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:string"
+        }
+      ]
+    },
+
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:string"
+        },
+        [
+          {
+            "item": "minecraft:black_wool"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:string"
+        }
+      ]
+    },
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:string"
+        },
+        [
+          {
+            "item": "minecraft:black_wool"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:string"
+        }
+      ]
+    },
+            {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:string"
+        },
+        [
+          {
+            "item": "minecraft:black_wool"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:string"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:string"
+        },
+        [
+          {
+            "item": "minecraft:iron_ingot"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:string"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "minecraft:string"
+        }
+      ],
+      "results": [
+        {
+          "item":"minecraft:string"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "minecraft:string"
+  }
+}

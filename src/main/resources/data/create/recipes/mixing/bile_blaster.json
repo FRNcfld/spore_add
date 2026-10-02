@@ -1,0 +1,33 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 1000,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:skull_soup"
+    },
+    {
+      "item": "spore:voracious_reagent"
+    },
+    {
+      "item": "spore:hyperbolized_liver"
+    },
+    {
+      "item": "spore:spine"
+    },
+    {
+      "item": "spore:gastric_reagent"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:bile_blaster"
+    }
+  ]
+}

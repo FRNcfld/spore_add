@@ -1,0 +1,36 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 400,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:plated_muscle"
+    },
+    {
+      "item": "spore:plated_muscle"
+    },
+    {
+      "item": "spore:plated_muscle"
+    },
+    {
+      "item": "spore:plated_muscle"
+    },
+    {
+      "item": "spore:nerves"
+    },
+    {
+      "item": "spore:tendons"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:living_pants"
+    }
+  ]
+}

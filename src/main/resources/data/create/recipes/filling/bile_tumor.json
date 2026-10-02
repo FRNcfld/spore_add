@@ -1,0 +1,20 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:filling",
+  "ingredients": [
+    {
+      "item": "spore:tumor"
+    },
+    {
+      "amount": 50,
+      "fluid": "spore:bile"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:bile_tumor"
+    }
+  ]
+}

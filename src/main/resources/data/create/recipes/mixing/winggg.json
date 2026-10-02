@@ -1,0 +1,30 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 250,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:armor_fragment"
+    },
+    {
+      "item": "spore:wing_membrane"
+    },
+    {
+      "item": "spore:wing_membrane"
+    },
+    {
+      "item": "spore:wing_membrane"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:r_wing"
+    }
+  ]
+}

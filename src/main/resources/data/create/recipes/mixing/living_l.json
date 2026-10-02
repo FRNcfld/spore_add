@@ -1,0 +1,24 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 500,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:living_pants"
+    },
+    {
+      "item": "spore:plated_pants"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:inf_pants"
+    }
+  ]
+}

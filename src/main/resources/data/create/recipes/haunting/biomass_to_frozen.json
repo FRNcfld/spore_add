@@ -1,0 +1,16 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:haunting",
+  "ingredients": [
+    {
+      "item": "spore:biomass"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:frozen_decayed_biomass"
+    }
+  ]
+}

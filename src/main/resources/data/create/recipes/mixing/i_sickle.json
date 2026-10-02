@@ -1,0 +1,33 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "item": "spore:living_core"
+    },
+    {
+      "amount": 225,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:sickle_fragment"
+    },
+    {
+      "item": "spore:sickle_fragment"
+    },
+    {
+      "item": "spore:spine_fragment"
+    },
+    {
+      "item": "spore:spine"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:sickle"
+    }
+  ]
+}

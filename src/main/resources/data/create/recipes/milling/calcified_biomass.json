@@ -1,0 +1,29 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:milling",
+  "ingredients": [
+    {
+      "item": "spore:calcified_biomass_block"
+    }
+  ],
+  "processingTime": 400,
+  "results": [
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:spine_fragment"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:claw_fragment"
+    }
+  ]
+}

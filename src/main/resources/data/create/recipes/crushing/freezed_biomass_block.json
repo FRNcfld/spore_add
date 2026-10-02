@@ -1,0 +1,28 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:freeze_burned_biomass"
+    }
+  ],
+  "processingTime": 125,
+  "results": [
+    {
+      "item": "spore:frozen_decayed_biomass"
+    },
+    {
+      "item": "minecraft:snowball"
+    },
+    {
+      "chance": 0.7,
+      "item": "minecraft:ice"
+    },
+    {
+      "chance": 0.1,
+      "item": "spore:frozen_tumor"
+    }
+  ]
+}

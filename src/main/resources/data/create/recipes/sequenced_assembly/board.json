@@ -1,0 +1,106 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "minecraft:comparator"
+  },
+  "loops": 1,
+  "results": [
+    {
+      "item": "spore:circuit_board"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:comparator"
+        },
+        [
+          {
+            "item": "spore:compound_plate"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:comparator"
+        }
+      ]
+    },
+
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:comparator"
+        },
+        [
+          {
+            "item": "minecraft:redstone"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:comparator"
+        }
+      ]
+    },
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:comparator"
+        },
+        [
+          {
+            "item": "minecraft:redstone"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:comparator"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:comparator"
+        },
+        [
+          {
+            "item": "minecraft:repeater"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:comparator"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "minecraft:comparator"
+        }
+      ],
+      "results": [
+        {
+          "item":"minecraft:comparator"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "minecraft:comparator"
+  }
+}

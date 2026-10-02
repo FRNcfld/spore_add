@@ -1,0 +1,20 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:compacting",
+  "ingredients": [
+    {
+      "amount": 10,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:biomass"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:crusted_bile"
+    }
+  ]
+}

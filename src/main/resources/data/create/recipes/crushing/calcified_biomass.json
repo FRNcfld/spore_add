@@ -1,0 +1,49 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:calcified_biomass_block"
+    }
+  ],
+  "processingTime": 200,
+  "results": [
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:mutated_fiber"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:claw_fragment"
+    },
+    {
+      "chance": 0.4,
+      "item": "spore:spine_fragment"
+    },
+    {
+      "chance": 0.2,
+      "item": "spore:tendons"
+    },
+    {
+      "chance": 0.05,
+      "item": "spore:spine"
+    },
+    {
+      "chance": 0.10,
+      "item": "spore:calcified_tumor"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "amount": 100,
+      "fluid": "spore:bile"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:gastric_biomass_block"
+    }
+  ]
+}

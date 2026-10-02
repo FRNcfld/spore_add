@@ -1,0 +1,30 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "ingredients": [
+    {
+      "item": "spore:mutated_fiber"
+    },
+    {
+      "amount": 500,
+      "fluid": "spore:bile",
+      "nbt": {}
+    },
+    {
+      "item": "spore:crusted_bile"
+    },
+    {
+      "item": "spore:innards"
+    },
+    {
+      "item": "spore:living_core"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:gastric_reagent"
+    }
+  ]
+}

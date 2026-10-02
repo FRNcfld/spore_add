@@ -1,0 +1,22 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:milling",
+  "ingredients": [
+    {
+      "item": "spore:mycelium_block"
+    }
+  ],
+  "processingTime": 500,
+  "results": [
+    {
+      "chance": 0.25,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.1,
+      "item": "spore:claw_fragment"
+    }
+  ]
+}

@@ -93,33 +93,6 @@ public final class ModParticles {
     public static final RegistryObject<SimpleParticleType> FROST_SIGH_FLARE =
             PARTICLES.register("frost_sigh_flare", () -> new SimpleParticleType(false));
 
-    // ------------------------------------------------------------------
-    // 倒计时曾经用过的"梦幻"三件套（**当前未使用**）
-    // ------------------------------------------------------------------
-    //
-    // 这三个是"给雾叠一层梦幻感"的尝试：会闪的、会飘的、会一圈圈扩散的。
-    // 但倒计时现在的需求是**和冰霜新星那团雾同款**（只为更浓、更深蓝），
-    // 而光环与柔光团的体量比雾还大、会把雾盖住——实测就是"看不出是那团雾"。
-    // 所以倒计时改回只用 MIST + FLAKE 这一对，这三件套暂时留在注册表里没地方用。
-    // 贴图与注册都还在，想要回来说一声即可（把 emitBurst 里那两行加回去）。
-
-    /**
-     * 缓慢外扩的紫蓝色光环。
-     *
-     * <p>倒计时最"梦幻"的一笔来自它：一整圈光环从方块往外扩散到半径 2 的边缘再淡出，
-     * 比单纯的雾有节奏得多——雾是一团，它是一圈一圈的。
-     */
-    public static final RegistryObject<SimpleParticleType> FROST_SIGH_RING =
-            PARTICLES.register("frost_sigh_ring", () -> new SimpleParticleType(false));
-
-    /** 柔和的白蓝色闪光，点缀在雾里，做"闪烁"的那一层。 */
-    public static final RegistryObject<SimpleParticleType> FROST_SIGH_SPARKLE =
-            PARTICLES.register("frost_sigh_sparkle", () -> new SimpleParticleType(false));
-
-    /** 蓝紫色的柔光团，缓慢上浮。填在雾与火花之间，把整团东西"提亮"。 */
-    public static final RegistryObject<SimpleParticleType> FROST_SIGH_GLOW =
-            PARTICLES.register("frost_sigh_glow", () -> new SimpleParticleType(false));
-
     /**
      * 降雪。
      *

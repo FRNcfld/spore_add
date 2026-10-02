@@ -1,0 +1,39 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 500,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:r_wing"
+    },
+    {
+      "item": "spore:armor_plate"
+    },
+    {
+      "item": "spore:alveolic_sack"
+    },
+    {
+      "item": "spore:tendons"
+    },
+    {
+      "item": "spore:alveolic_sack"
+    },
+    {
+      "item": "spore:living_core"
+    },
+    {
+      "item": "spore:r_wing"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:r_elytron"
+    }
+  ]
+}

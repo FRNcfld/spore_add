@@ -1,0 +1,49 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:gastric_biomass_block"
+    }
+  ],
+  "processingTime": 75,
+  "results": [
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:mutated_fiber"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:tendons"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:mutated_heart"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:innards"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:crusted_bile"
+    },
+    {
+      "chance": 0.2,
+      "item": "spore:bile_tumor"
+    }
+  ]
+}

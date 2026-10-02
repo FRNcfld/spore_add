@@ -1,0 +1,53 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:membrane_block"
+    }
+  ],
+  "processingTime": 75,
+  "results": [
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.75,
+      "item": "spore:mutated_fiber"
+    },
+    {
+      "chance": 0.05,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.1,
+      "item": "spore:wing_membrane"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:mutated_heart"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:organoid_membrane"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:nerves"
+    },
+    {
+      "chance": 0.2,
+      "item": "spore:tumor"
+    },
+    {
+      "chance": 0.02,
+      "item": "spore:reforged_biomass_a"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:milling",
+  "ingredients": [
+    {
+      "item": "spore:brain_remnants"
+    }
+  ],
+  "processingTime": 200,
+  "results": [
+    {
+      "item": "spore:cerebrum"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:reforged_biomass_t"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:reforged_biomass_w"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:reforged_biomass_a"
+    },
+    {
+      "chance": 0.2,
+      "item": "spore:vigil_eye"
+    }
+  ]
+}

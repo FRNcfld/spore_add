@@ -1,0 +1,49 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:rooted_biomass"
+    }
+  ],
+  "processingTime": 100,
+  "results": [
+    {
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.75,
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:mutated_fiber"
+    },
+    {
+      "chance": 0.25,
+      "item": "spore:armor_fragment"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:claw_fragment"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:mutated_heart"
+    },
+    {
+      "chance": 0.1,
+      "item": "spore:organoid_membrane"
+    },
+    {
+      "chance": 0.15,
+      "item": "spore:tendons"
+    },
+    {
+      "chance": 0.1,
+      "item": "spore:tumor"
+    }
+  ]
+}

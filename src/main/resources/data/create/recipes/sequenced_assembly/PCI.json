@@ -1,0 +1,124 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "minecraft:iron_sword"
+  },
+  "loops": 1,
+  "results": [
+    {
+      "item": "spore:pci"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "minecraft:cobbled_deepslate"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "minecraft:lead"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "minecraft:glass_bottle"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+            {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "spore:compound_plate"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        },
+        [
+          {
+            "item": "spore:compound_plate"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "minecraft:iron_sword"
+        }
+      ],
+      "results": [
+        {
+          "item":"minecraft:iron_sword"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "minecraft:iron_sword"
+  }
+}

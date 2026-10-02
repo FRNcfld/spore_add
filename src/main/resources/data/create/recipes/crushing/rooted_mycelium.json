@@ -1,0 +1,22 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "spore:rooted_mycelium"
+    }
+  ],
+  "processingTime": 25,
+  "results": [
+    {
+      "chance": 0.75,
+      "item": "spore:biomass"
+    },
+    {
+      "chance": 0.5,
+      "item": "spore:decayed_limbs"
+    }
+  ]
+}

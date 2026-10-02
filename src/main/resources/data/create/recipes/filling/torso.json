@@ -1,0 +1,20 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:filling",
+  "ingredients": [
+    {
+      "item": "spore:decayed_torso"
+    },
+    {
+      "amount": 100,
+      "fluid": "spore:bile"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:stuffed_torso"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "item": "minecraft:packed_ice"
+  },
+  "loops": 1,
+  "results": [
+    {
+      "item": "spore:ice_canister"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:packed_ice"
+        },
+        [
+          {
+            "item": "minecraft:iron_nugget"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:packed_ice"
+        }
+      ]
+    },
+
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:packed_ice"
+        },
+        [
+          {
+            "item": "minecraft:iron_nugget"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:packed_ice"
+        }
+      ]
+    },
+        {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:packed_ice"
+        },
+        [
+          {
+            "item": "minecraft:iron_nugget"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:packed_ice"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "minecraft:packed_ice"
+        },
+        [
+          {
+            "item": "minecraft:iron_nugget"
+          }
+        ]
+      ],
+      "results": [
+        {
+          "item": "minecraft:packed_ice"
+        }
+      ]
+    },
+    {
+      "type": "create:pressing",
+      "ingredients": [
+        {
+          "item": "minecraft:packed_ice"
+        }
+      ],
+      "results": [
+        {
+          "item":"minecraft:packed_ice"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "minecraft:packed_ice"
+  }
+}

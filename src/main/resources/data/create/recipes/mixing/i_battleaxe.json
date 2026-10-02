@@ -1,0 +1,36 @@
+{
+  "conditions": [
+    { "type": "forge:mod_loaded", "modid": "create" }
+  ],
+  "type": "create:mixing",
+  "heatRequirement": "heated",
+  "ingredients": [
+    {
+      "amount": 300,
+      "fluid": "spore:bile"
+    },
+    {
+      "item": "spore:living_core"
+    },
+    {
+      "item": "spore:fleshy_claw"
+    },
+    {
+      "item": "spore:fleshy_claw"
+    },
+    {
+      "item": "spore:fleshy_claw"
+    },
+    {
+      "item": "spore:fleshy_claw"
+    },
+    {
+      "item": "spore:fleshy_bone"
+    }
+  ],
+  "results": [
+    {
+      "item": "spore:armads"
+    }
+  ]
+}
