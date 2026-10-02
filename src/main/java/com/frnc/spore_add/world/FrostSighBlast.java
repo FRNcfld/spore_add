@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.block.LiquidColdBlock;
 import com.frnc.spore_add.block.ModBlocks;
 import com.frnc.spore_add.compat.SporeCompat;
 import com.frnc.spore_add.fluid.ModFluids;
@@ -76,6 +77,38 @@ public final class FrostSighBlast {
     /** 到这个相对半径之前是两层，再往外只有一层。 */
     private static final double TWO_LAYERS_UNTIL = 0.92D;
 
+    // ------------------------------------------------------------------
+    // 冰刺（需求：像原版冰刺之地那样，越靠近中心越雄伟）
+    // ------------------------------------------------------------------
+
+    /** 到这个相对半径之外就不长冰刺了。 */
+    private static final double SPIKE_MAX_T = 0.75D;
+
+    /**
+     * 低于这个高度就干脆不长。
+     *
+     * <p><b>这一条是给"小冰柱"准备的。</b>圆锥的<b>尖端</b>才高，靠近底面的那一圈几乎贴着冰面；
+     * 再乘上随距离衰减的中心系数，绝大多数列算出来只有 1~3 格——远看就是一地三五格高的小桩子，
+     * 而不是"冰刺"。与其让它们以那副样子出现，不如直接不生。
+     */
+    private static final int SPIKE_MIN_HEIGHT = 10;
+
+    /** 山尖之间的间隔（格）。越小越密——这是"数量"最主要的旋钮。 */
+    private static final int SPIKE_CELL = 7;
+
+    /**
+     * 多少个格子里才有一个真的长出山尖（取模）。越小越密。
+     *
+     * <p>1/2。格子 7 格见方、锥体底面半径 3（6 格宽），所以相邻山尖平均隔 9.9 格——足够各自成形。
+     */
+    private static final int SPIKE_RARITY = 2;
+
+    /** 一根冰刺底面能铺多宽（半径，格）。越小越"针"，越大越"丘"。 */
+    private static final int SPIKE_BASE_RADIUS = 3;
+
+    /** 正中心最高的一根冰刺有多高（格）。 */
+    private static final int SPIKE_MAX_HEIGHT = 70;
+
     private FrostSighBlast() {
     }
 
@@ -90,10 +123,10 @@ public final class FrostSighBlast {
         // 需求 8：爆发点处生成一格液态寒冷。
         // 放在最前面，免得后面铺冰把它盖掉（冲击环是从中心往外推的，中心那一列会被最先处理）。
         //
-        // 注意这里用的是**方块**（ModBlocks.LIQUID_COLD，一个 LiquidBlock）而不是流体本身：
-        // defaultBlockState() 是 Block 的方法，FlowingFluid 上没有；流体在世界里必须借它的流体方块
-        // 才能放置。LiquidBlock 的默认状态 LEVEL = 0，也就是**源头**，正是需求要的。
-        level.setBlock(center, ModBlocks.LIQUID_COLD.get().defaultBlockState(), Block.UPDATE_ALL);
+        // ⚠️ 必须用 placeQuietly 而不是裸 setBlock：LiquidColdBlock 放下时会把上下 + 四个水平
+        // 各冻一块浮冰，那正好是一个<b>轴对齐的十字</b>（竖直三格高）。放在爆心，它就会把整片
+        // 圆形冰面切成规规整整的四块——一发核弹的正中央顶着个大十字，非常扎眼。
+        LiquidColdBlock.placeQuietly(level, center);
 
         changeBiome(level, center, radius);
     }
@@ -121,6 +154,8 @@ public final class FrostSighBlast {
         double outerSqr = rTo * rTo;
         double innerSqr = rFrom * rFrom;
         double capSqr = (double) radius * radius;
+        // 用爆心当盐：每一场爆发的冰刺布局都不同，而同一场内部处处一致（冰刺是 (x,z) 的纯函数）
+        long spikeSalt = center.asLong() * 0x9E3779B97F4A7C15L;
 
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {
@@ -133,7 +168,7 @@ public final class FrostSighBlast {
                 if (!level.hasChunk(x >> 4, z >> 4)) {
                     continue;   // 未加载的区块不动（强制加载开着时不该发生，但这里仍然兜一道）
                 }
-                coverColumn(level, x, z, Math.sqrt(distSqr), radius, fungalRules);
+                coverColumn(level, x, z, Math.sqrt(distSqr), radius, fungalRules, spikeSalt);
             }
         }
     }
@@ -155,7 +190,7 @@ public final class FrostSighBlast {
      * @param distance 这一列到爆发中心的水平距离
      */
     private static void coverColumn(ServerLevel level, int x, int z, double distance, int radius,
-                                    FungalClearing.Rules fungalRules) {
+                                    FungalClearing.Rules fungalRules, long spikeSalt) {
         int minY = level.getMinBuildHeight();
         int maxY = level.getMaxBuildHeight();
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
@@ -173,6 +208,14 @@ public final class FrostSighBlast {
                 continue;
             }
 
+            if (FrostProof.isProtected(state)) {
+                // 名单里的方块（传送门、基岩……）：**绝不替换**，但照样算作"地层"——
+                // 它下面的流体不该被冻，这一点与原版那句 `break` 的语义一致
+                // （它也是"撞到第一个非空气非流体的方块就停"）。
+                fluidZone = false;
+                continue;
+            }
+
             if (fluidZone) {
                 FluidState fluid = state.getFluidState();
                 if (!fluid.isEmpty()) {
@@ -182,7 +225,8 @@ public final class FrostSighBlast {
                         continue;   // 液态寒冷豁免
                     }
                     if (fluid.isSource() && level.random.nextFloat() < SOURCE_TO_LIQUID_COLD_CHANCE) {
-                        level.setBlock(cursor, ModBlocks.LIQUID_COLD.get().defaultBlockState(), FLUID_FLAGS);
+                        // 同样走 quiet：不然整片冰面上会散布一堆小十字
+                        LiquidColdBlock.placeQuietly(level, cursor);
                     } else {
                         // 流体没有"层"的概念，所以只按水平梯度分蓝冰/浮冰（见 iceFor）
                         level.setBlock(cursor, iceFor(level, horizontal, 0.0D), FLUID_FLAGS);
@@ -210,9 +254,38 @@ public final class FrostSighBlast {
             if (cursor.getY() >= maxY) {
                 break;
             }
+            // ⚠️ 这一步是**无条件覆盖**——铺冰不挑地方，所以必须自己看一眼名单。
+            //
+            // 这正是传送门被埋掉的入口：传送门是不挡视线的非固体方块（noCollission），
+            // 高度图看不见它，于是 surfaceY 会落在传送门所在的那几格上，冰就直接盖在它身上。
+            // 前面那些"扫到实心方块就停"的逻辑一点忙都帮不上——这里根本没有扫描，只有 setBlock。
+            if (FrostProof.isProtected(level.getBlockState(cursor))) {
+                continue;
+            }
             // i = 0 是最下面那一层（贴地），i = layers-1 是最上面那一层
             double layerT = layers <= 1 ? 0.0D : (double) i / (layers - 1);
             level.setBlock(cursor, iceFor(level, horizontal, layerT), ICE_FLAGS);
+        }
+
+        // 冰刺：长在冰层**之上**，所以起点是 surfaceY + layers。
+        // 用同一个 horizontal 系数取色（传 layerT = 0），于是一根刺是**单一颜色**——
+        // 靠中心的刺是整根蓝冰，靠外的整根浮冰，与地面上那套"中心蓝、外围浮"是同一套语言。
+        double spikeCenter = radius <= 0 ? 0.0D
+                : 1.0D - distance / ((double) radius * SPIKE_MAX_T);
+        int spike = spikeHeight(x, z, Mth.clamp(spikeCenter, 0.0D, 1.0D), spikeSalt);
+        if (spike < SPIKE_MIN_HEIGHT) {
+            // 太矮的不要，见 SPIKE_MIN_HEIGHT。这一条就是"清除那些三格高的小柱子"。
+            return;
+        }
+        for (int i = 0; i < spike; i++) {
+            cursor.set(x, surfaceY + layers + i, z);
+            if (cursor.getY() >= maxY) {
+                break;
+            }
+            if (FrostProof.isProtected(level.getBlockState(cursor))) {
+                break;   // 撞到受保护的方块就到此为止，别把传送门之类埋进冰刺里
+            }
+            level.setBlock(cursor, iceFor(level, horizontal, 0.0D), ICE_FLAGS);
         }
     }
 
@@ -250,6 +323,72 @@ public final class FrostSighBlast {
         return level.random.nextDouble() < blueChance
                 ? Blocks.BLUE_ICE.defaultBlockState()
                 : Blocks.PACKED_ICE.defaultBlockState();
+    }
+
+    /**
+     * 这一列该长多高的冰刺。返回 0 表示这一列不长。
+     *
+     * <h2>为什么是"纯函数"而不是一张生成表</h2>
+     * 冰刺的形状完全由 {@code (x, z)} 决定（另外加一个由爆心算出的盐，让每一场爆发的布局都不同），
+     * 所以冲击环扫到哪一列就现算哪一列，<b>不需要在实体里存一张"哪里该长刺"的表</b>——
+     * 也就不存在"世界重载后那张表丢了、剩下的冰刺长不出来"这种问题。
+     *
+     * <h2>怎么长出一根根"锥体"而不是一片噪点</h2>
+     * 把地图切成 {@link #SPIKE_CELL} 见方的格子，其中 {@link #SPIKE_RARITY} 分之一的格子里放一个山尖，
+     * 山尖的高度沿半径线性收到 0，于是周围形成一个锥体。判断某一列时看的是<b>3×3 个格子</b>——
+     * 山尖可能长在隔壁格子里、锥体伸进本格，只看自己那一格会把锥体削掉一角。
+     *
+     * <h2>"越靠近中心越雄伟"</h2>
+     * 算出来的高度再乘一个中心系数：正中心满高，到 {@link #SPIKE_MAX_T} 处降到 0。
+     *
+     * <p><b>系数在这里开了平方根。</b>线性版本下，半径 128 的盘子里只有最里面那一小圈算得上高，
+     * 三分之二半径处就只剩三成了（实测平均高度只有 4.6 格——满地的矮桩子）。
+     * 开方之后衰减前重后轻，外侧也留得住高度。
+     *
+     * @param centerFactor <b>线性</b>的中心系数：0 = 太靠外、这一列不该有冰刺；1 = 正中心
+     */
+    private static int spikeHeight(int x, int z, double centerFactor, long salt) {
+        if (centerFactor <= 0.0D) {
+            return 0;
+        }
+        double falloff = Math.sqrt(Math.min(1.0D, centerFactor));
+        int cellX = Math.floorDiv(x, SPIKE_CELL);
+        int cellZ = Math.floorDiv(z, SPIKE_CELL);
+        double best = 0.0D;
+
+        for (int cx = cellX - 1; cx <= cellX + 1; cx++) {
+            for (int cz = cellZ - 1; cz <= cellZ + 1; cz++) {
+                long hash = spikeHash(cx, cz, salt);
+                if (Math.floorMod(hash, SPIKE_RARITY) != 0) {
+                    continue;   // 这一格没有山尖
+                }
+                // 山尖在本格内的落点，以及它自身的高度系数（0.45~1.0，免得所有刺一样高）
+                int peakX = cx * SPIKE_CELL + Math.floorMod(hash >> 8, SPIKE_CELL);
+                int peakZ = cz * SPIKE_CELL + Math.floorMod(hash >> 20, SPIKE_CELL);
+                double peakScale = 0.45D + 0.55D * (Math.floorMod(hash >> 32, 256) / 255.0D);
+
+                double dx = x - peakX;
+                double dz = z - peakZ;
+                double d = Math.sqrt(dx * dx + dz * dz);
+                if (d >= SPIKE_BASE_RADIUS) {
+                    continue;
+                }
+                double height = SPIKE_MAX_HEIGHT * peakScale * (1.0D - d / SPIKE_BASE_RADIUS);
+                if (height > best) {
+                    best = height;
+                }
+            }
+        }
+        return (int) Math.round(best * falloff);
+    }
+
+    /** 由格子坐标与爆心盐得到一个稳定的伪随机数：同一格永远是同一个值。 */
+    private static long spikeHash(int cellX, int cellZ, long salt) {
+        long h = salt + cellX * 341873128712L + cellZ * 132897987541L;
+        h ^= h >>> 29;
+        h *= 0x9E3779B97F4A7C15L;
+        h ^= h >>> 32;
+        return h;
     }
 
     // ------------------------------------------------------------------

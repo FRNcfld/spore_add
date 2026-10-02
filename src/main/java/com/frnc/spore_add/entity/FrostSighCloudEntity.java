@@ -40,36 +40,50 @@ public class FrostSighCloudEntity extends Entity {
     /**
      * 蘑菇云的参考高度（格）。配置里的半径 128 就对应这个尺寸，其余半径按比例缩放。
      * 下面的几个比例常数都是相对它取的。
+     *
+     * <h2>这一组常数的调过一轮（"更加宏大"）</h2>
+     * 调的是<b>形状</b>，粒子种类与它们各自的外观参数一个没动：参考高度 32 → 48（整体高一半），
+     * 伞盖半径 0.32 → 0.44（帽子宽了一倍，这是"宏大"最主要的一笔），底部涌浪 0.30 → 0.46
+     * （地面上那圈铺得更开），茎相应变粗一点托得住更宽的帽子。
+     * 长成时间 200 → 260 tick，撑得慢一点才显得"升起来"而不是"啪地弹出来"。
      */
-    private static final float REFERENCE_HEIGHT = 32.0F;
+    private static final float REFERENCE_HEIGHT = 80.0F;
 
     /** 尺寸系数的上下限。太小看不见，太大挡视野。 */
-    private static final float MIN_SCALE = 0.4F;
-    private static final float MAX_SCALE = 1.6F;
+    private static final float MIN_SCALE = 0.5F;
+    private static final float MAX_SCALE = 2.5F;
 
     /** 茎的半径（占参考高度的比例，下同）。 */
-    private static final float STEM_RADIUS = 0.10F;
+    private static final float STEM_RADIUS = 0.13F;
 
     /** 茎能长到多高。 */
-    private static final float STEM_HEIGHT = 0.70F;
+    private static final float STEM_HEIGHT = 0.62F;
 
     /** 伞盖的半径。 */
-    private static final float CAP_RADIUS = 0.32F;
+    private static final float CAP_RADIUS = 0.44F;
 
     /** 伞盖中心的高度。 */
-    private static final float CAP_HEIGHT = 0.80F;
+    private static final float CAP_HEIGHT = 0.78F;
 
     /** 底部涌浪能铺多远。 */
-    private static final float SURGE_RADIUS = 0.30F;
+    private static final float SURGE_RADIUS = 0.46F;
 
     /** 长成"完全体"要多少 tick。之后只维持，不再长大。 */
-    private static final int BILLOW_TICKS = 200;
+    private static final int BILLOW_TICKS = 260;
 
     /** 寿命最后这一段开始消散（0.75 = 最后 25%）。 */
     private static final float FADE_START = 0.75F;
 
-    /** 每 tick 撒的粒子数上限。<b>这是主要的性能旋钮</b>——它有硬上限，不随半径的立方增长。 */
-    private static final int MAX_PARTICLES_PER_TICK = 90;
+    /**
+     * 每 tick 撒的粒子数上限。<b>这是主要的性能旋钮</b>——它有硬上限，不随半径的立方增长。
+     *
+     * <p>云变大之后必须跟着加浓，否则同一个粒子数摊在更大的体积里只会显得更稀、反而更小。
+     * 参考高度从 48 提到 80 时，体积是原来的四倍多，所以这里也从 90 一路提到 200。
+     * 稳态存活量 ≈ 每 tick 数 × 粒子寿命（80~140 tick），也就是两万上下——
+     * <b>这是整个 mod 最贵的一处特效</b>。真跑不动的话第一个该调的就是它，
+     * 其次是把参考高度降回去。
+     */
+    private static final int MAX_PARTICLES_PER_TICK = 200;
 
     /** 开场这几 tick 额外撒一点最亮的粒子，做出"闪光"。 */
     private static final int FLARE_TICKS = 10;

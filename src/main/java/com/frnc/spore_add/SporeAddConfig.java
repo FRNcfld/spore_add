@@ -304,7 +304,7 @@ public final class SporeAddConfig {
             this.entityRadius = builder
                     .comment("满蓄力时，落点处被施加冻伤的实体球半径（格）。1 ~ 32。",
                             "这个半径只作用于实体，与换方块的 blockRadius 各管各的。")
-                    .defineInRange("entityRadius", 10, 1, 32);
+                    .defineInRange("entityRadius", 12, 1, 32);
 
             this.frostbiteSeconds = builder
                     .comment("满蓄力时冻伤的持续秒数。1 ~ 600。")
@@ -362,7 +362,7 @@ public final class SporeAddConfig {
                     .comment("二次爆炸的影响范围倍率。1.0 ~ 4.0。",
                             "只放大**范围**——冰雾与冻伤的半径；二次爆炸不产生任何伤害，",
                             "所以这里调多大都不会让伤害变高。")
-                    .defineInRange("secondaryRangeMultiplier", 1.5D, 1.0D, 4.0D);
+                    .defineInRange("secondaryRangeMultiplier", 2.0D, 1.0D, 4.0D);
 
             this.secondaryPowerMultiplier = builder
                     .comment("二次爆炸的冻伤强度倍率：层数与秒数一起乘。1.0 ~ 5.0。",

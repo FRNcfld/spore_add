@@ -116,12 +116,29 @@ public final class SporeAddClient {
         // 尺寸给得比新星那组大得多——核弹的体量摆在那里，小粒子撑不起来。
         event.registerSpriteSet(ModParticles.FROST_SIGH_CLOUD.get(),
                 sprites -> FrostMoteParticle.provider(sprites, 2.6F, 0.50F, 60, 110, 0.0F));
+        // 倒计时那团雾的主体：与新星是同一张图（重上色成深蓝），但尺寸与不透明度都更大
+        // ——"更浓烈"就是这两项加上每拍撒的数量给的（新星那档是 2.2 / 0.35）。
+        event.registerSpriteSet(ModParticles.FROST_SIGH_MIST.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 2.8F, 0.55F, 50, 90, 0.0F));
+        // 与雾配对的那片雪花：参数照抄新星的 FROST_SNOWFLAKE（小、亮、缓慢上飘），
+        // 只是贴图是深蓝版。比例上雾是主角，它只是点缀。
+        event.registerSpriteSet(ModParticles.FROST_SIGH_FLAKE.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 0.6F, 0.9F, 30, 60, -0.008F));
         event.registerSpriteSet(ModParticles.FROST_SIGH_HAZE.get(),
                 sprites -> FrostMoteParticle.provider(sprites, 3.2F, 0.60F, 80, 140, 0.0F));
         event.registerSpriteSet(ModParticles.FROST_SIGH_CORE.get(),
                 sprites -> FrostMoteParticle.provider(sprites, 1.6F, 0.80F, 40, 70, 0.0F));
         event.registerSpriteSet(ModParticles.FROST_SIGH_FLARE.get(),
                 sprites -> FrostMoteParticle.provider(sprites, 1.2F, 0.90F, 20, 40, 0.05F));
+        // 倒计时的"梦幻"三件套（见 ModParticles 里的说明）：
+        // 环最大最透、活得最久，负责"一圈圈扩散"；闪光小而亮、寿命中等，负责"闪"；
+        // 柔光团居中，缓慢上浮（负重力），负责把整团东西提亮。
+        event.registerSpriteSet(ModParticles.FROST_SIGH_RING.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 2.8F, 0.55F, 30, 60, -0.006F));
+        event.registerSpriteSet(ModParticles.FROST_SIGH_SPARKLE.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 1.0F, 0.85F, 40, 80, -0.012F));
+        event.registerSpriteSet(ModParticles.FROST_SIGH_GLOW.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 2.2F, 0.38F, 60, 110, -0.008F));
         event.registerSpriteSet(ModParticles.FROST_SIGH_SNOW.get(),
                 sprites -> FrostMoteParticle.provider(sprites, 0.4F, 0.90F, 40, 80, -0.01F));
         // 警示粒子：透明度压到 0.45、寿命也短，做出"淡淡的"效果。

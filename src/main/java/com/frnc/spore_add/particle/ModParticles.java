@@ -57,6 +57,30 @@ public final class ModParticles {
     public static final RegistryObject<SimpleParticleType> FROST_SIGH_CLOUD =
             PARTICLES.register("frost_sigh_cloud", () -> new SimpleParticleType(false));
 
+    /**
+     * 激活期那团雾的<b>主体</b>：冰霜新星那团霜雾的同一个素材，只是重新上色成深蓝。
+     *
+     * <h2>为什么是"重上色"而不是另找一个素材</h2>
+     * 需求要的是"和新星一样的冰雾特效，但要更浓烈、颜色深蓝"。素材库里没有现成的深蓝雾团，
+     * 但把 {@code frost_mist} 的色相挪到 232°、饱和度顶到 0.85、明度压在 0.24~0.58，
+     * 得到的就是**同一张图**的深蓝版本——形状、颗粒感一模一样，只有颜色不同。
+     * 这正是"一样、只是深蓝"的字面实现。（这张是派生素材，署名见 THIRD-PARTY-NOTICES。）
+     *
+     * <p>"更浓烈"由两处给：这里的尺寸与不透明度都比新星那档大（见 {@code SporeAddClient}），
+     * 以及倒计时每拍撒的数量。{@code FROST_SIGH_CLOUD} 仍然留给蘑菇云的茎用。
+     */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_MIST =
+            PARTICLES.register("frost_sigh_mist", () -> new SimpleParticleType(false));
+
+    /**
+     * 与 {@link #FROST_SIGH_MIST} 配对的雪花：{@code frost_snowflake} 的深蓝重上色版。
+     *
+     * <p>冰霜新星那团雾是"{@code FROST_MIST} 为主、{@code FROST_SNOWFLAKE} 点缀"的一对
+     * （比例约 18:4）。核弹这边要"同款但更深"，所以两个都换成深蓝版本，组成也一样。
+     */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_FLAKE =
+            PARTICLES.register("frost_sigh_flake", () -> new SimpleParticleType(false));
+
     /** 蘑菇云主体。填充率最高（0.66）的一团。 */
     public static final RegistryObject<SimpleParticleType> FROST_SIGH_HAZE =
             PARTICLES.register("frost_sigh_haze", () -> new SimpleParticleType(false));
@@ -68,6 +92,33 @@ public final class ModParticles {
     /** 爆发瞬间的闪光。 */
     public static final RegistryObject<SimpleParticleType> FROST_SIGH_FLARE =
             PARTICLES.register("frost_sigh_flare", () -> new SimpleParticleType(false));
+
+    // ------------------------------------------------------------------
+    // 倒计时曾经用过的"梦幻"三件套（**当前未使用**）
+    // ------------------------------------------------------------------
+    //
+    // 这三个是"给雾叠一层梦幻感"的尝试：会闪的、会飘的、会一圈圈扩散的。
+    // 但倒计时现在的需求是**和冰霜新星那团雾同款**（只为更浓、更深蓝），
+    // 而光环与柔光团的体量比雾还大、会把雾盖住——实测就是"看不出是那团雾"。
+    // 所以倒计时改回只用 MIST + FLAKE 这一对，这三件套暂时留在注册表里没地方用。
+    // 贴图与注册都还在，想要回来说一声即可（把 emitBurst 里那两行加回去）。
+
+    /**
+     * 缓慢外扩的紫蓝色光环。
+     *
+     * <p>倒计时最"梦幻"的一笔来自它：一整圈光环从方块往外扩散到半径 2 的边缘再淡出，
+     * 比单纯的雾有节奏得多——雾是一团，它是一圈一圈的。
+     */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_RING =
+            PARTICLES.register("frost_sigh_ring", () -> new SimpleParticleType(false));
+
+    /** 柔和的白蓝色闪光，点缀在雾里，做"闪烁"的那一层。 */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_SPARKLE =
+            PARTICLES.register("frost_sigh_sparkle", () -> new SimpleParticleType(false));
+
+    /** 蓝紫色的柔光团，缓慢上浮。填在雾与火花之间，把整团东西"提亮"。 */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_GLOW =
+            PARTICLES.register("frost_sigh_glow", () -> new SimpleParticleType(false));
 
     /**
      * 降雪。

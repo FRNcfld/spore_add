@@ -173,6 +173,13 @@ public final class FungalClearing {
     private static Decision decide(BlockState state, List<BlockPair> configured) {
         Block block = state.getBlock();
 
+        // 名单里的方块（传送门等）一律不碰。放在最前面：数据包里完全可能有人把传送门写进
+        // 转换表，或者给某个受保护的方块挂上真菌标签——那也不该由本 mod 把它清掉。
+        // 这一步在 {@link Rules} 里是按方块缓存的，所以只会有一次判定成本。
+        if (FrostProof.isProtected(state)) {
+            return null;
+        }
+
         if (block == Refs.REMAINS) {
             return new Decision(Refs.FROZEN_REMAINS, false);
         }

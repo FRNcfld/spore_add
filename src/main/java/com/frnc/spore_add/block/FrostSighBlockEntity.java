@@ -7,6 +7,7 @@ import com.frnc.spore_add.sound.ModSounds;
 import com.frnc.spore_add.world.FrostSighChunks;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -115,17 +116,31 @@ public class FrostSighBlockEntity extends BlockEntity {
     /**
      * 倒计时那团粒子云的半径上限（格）。
      *
-     * <p>云从方块往外扩散，但整个云始终关在这个球里——不再随进度铺开到十几格。
+     * <p>云从方块往外扩散，但整个云始终关在这个球里——不随进度铺开到十几格。
+     * 4 格大约是"一块方块的周围两圈"，玩家站在旁边看得出是一团罩着方块的雾。
      */
-    private static final double CLOUD_RADIUS = 2.0D;
+    private static final double CLOUD_RADIUS = 4.0D;
 
-    /** 每次爆发撒几个「云」（分布在球内）。 */
-    private static final int CLOUD_PARTICLES_PER_BURST = 3;
+    /**
+     * 每次爆发撒几个「雾」（分布在球内）。这是倒计时的主体。
+     *
+     * <p>用的是与新星同一张图（重上色成深蓝）的 {@code FROST_SIGH_MIST}。
+     *
+     * <h2>数量是跟着球体积走的，但跟不上</h2>
+     * 半径从 2 提到 4，球体积是<b>八倍</b>；真要保持同样的浓度就得把数量也乘八，
+     * 而最高频那一档（16 拍/秒）会变成每秒上千个粒子、稳态存活量六万——不可接受。
+     * 所以这里取 6 → 12（两倍）：云明显更大更满，但比原来略稀一点。这是刻意的取舍。
+     */
+    private static final int MIST_PARTICLES_PER_BURST = 12;
 
-    /** 每次爆发撒几个「核」（最暗的那种，堆在球心）。 */
-    private static final int CORE_PARTICLES_PER_BURST = 1;
+    /**
+     * 每次爆发撒几个雪花。
+     *
+     * <p>与新星那对粒子保持同一个组成（雾为主、雪花点缀，约 6:1）。
+     */
+    private static final int FLAKE_PARTICLES_PER_BURST = 2;
 
-    /** 进度超过这个值开始补最亮的闪光。 */
+    /** 进度超过这个值开始补最亮的闪光（"快炸了"的提示）。 */
     private static final float FLARE_FROM_PROGRESS = 0.75F;
 
     /** 每 tick 在边界圆周上撒几个警示粒子。 */
@@ -254,17 +269,15 @@ public class FrostSighBlockEntity extends BlockEntity {
             if (player.blockPosition().distSqr(pos) > 256.0D * 256.0D) {
                 continue;
             }
-            for (int i = 0; i < CLOUD_PARTICLES_PER_BURST; i++) {
-                // cbrt(random) 才是球体积上的均匀分布——直接用 random 会让粒子全挤在球心
-                double distance = reach * Math.cbrt(level.random.nextDouble());
-                double[] dir = randomDirection(level);
-                level.sendParticles(player, ModParticles.FROST_SIGH_CLOUD.get(), true,
-                        cx + dir[0] * distance, cy + dir[1] * distance, cz + dir[2] * distance,
-                        1, 0.0D, 0.0D, 0.0D, 0.0D);
+            // 主体：雾。与冰霜新星那团雾是同一张图（重上色成深蓝），组成也一样。
+            for (int i = 0; i < MIST_PARTICLES_PER_BURST; i++) {
+                spawnInSphere(level, player, cx, cy, cz, reach, ModParticles.FROST_SIGH_MIST.get());
             }
-            // 球心那一小团最浓的
-            level.sendParticles(player, ModParticles.FROST_SIGH_CORE.get(), true,
-                    cx, cy, cz, CORE_PARTICLES_PER_BURST, 0.4D, 0.4D, 0.4D, 0.0D);
+            // 点缀：同一对里的雪花（深蓝版）
+            for (int i = 0; i < FLAKE_PARTICLES_PER_BURST; i++) {
+                spawnInSphere(level, player, cx, cy, cz, reach, ModParticles.FROST_SIGH_FLAKE.get());
+            }
+
             if (progress > FLARE_FROM_PROGRESS) {
                 double[] dir = randomDirection(level);
                 level.sendParticles(player, ModParticles.FROST_SIGH_FLARE.get(), true,
@@ -272,6 +285,16 @@ public class FrostSighBlockEntity extends BlockEntity {
                         1, 0.0D, 0.0D, 0.0D, 0.0D);
             }
         }
+    }
+
+    /** 在球体积内均匀取一点撒一个粒子（{@code cbrt} 才是体积上的均匀，见上面那段注释）。 */
+    private static void spawnInSphere(ServerLevel level, ServerPlayer player, double cx, double cy,
+                                      double cz, double reach, ParticleOptions particle) {
+        double distance = reach * Math.cbrt(level.random.nextDouble());
+        double[] dir = randomDirection(level);
+        level.sendParticles(player, particle, true,
+                cx + dir[0] * distance, cy + dir[1] * distance, cz + dir[2] * distance,
+                1, 0.0D, 0.0D, 0.0D, 0.0D);
     }
 
     /** 球面上均匀取一个方向。 */

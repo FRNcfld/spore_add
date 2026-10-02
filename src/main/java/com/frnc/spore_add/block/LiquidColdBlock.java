@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.frnc.spore_add.SporeAddConfig;
 import com.frnc.spore_add.effect.ColdEffects;
 import com.frnc.spore_add.effect.FrostbiteLevels;
+import com.frnc.spore_add.world.FrostProof;
 import com.frnc.spore_add.world.FrozenChunks;
 
 import net.minecraft.core.BlockPos;
@@ -76,8 +77,8 @@ public class LiquidColdBlock extends LiquidBlock {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (level.isClientSide()) {
-            return;
+        if (level.isClientSide() || quietPlacement) {
+            return;   // quietPlacement：核弹那条路不要这份"见面礼"，见 placeQuietly
         }
         // 放下时立刻把接触到的空气与流体冻成浮冰
         freezeNeighbours(level, pos);
@@ -126,6 +127,36 @@ public class LiquidColdBlock extends LiquidBlock {
             if (isReplaceable(level, target, true)) {
                 level.setBlock(target, Blocks.PACKED_ICE.defaultBlockState(), REPLACE_FLAGS);
             }
+        }
+    }
+
+    /**
+     * 当前这次放置要不要跳过 {@link #freezeNeighbours}。
+     *
+     * <p>只在 {@link #placeQuietly} 里短暂置起。{@code onPlace} 是在 {@code setBlock} 的调用栈里
+     * 同步执行的，所以这个标志一定能被读到、也一定会被 {@code finally} 复位。
+     * 世界的方块改动本来就只在服务端线程发生，不需要 volatile。
+     */
+    private static boolean quietPlacement;
+
+    /**
+     * 放下液态寒冷，但<b>不要</b>顺手把周围六格冻成浮冰。
+     *
+     * <h2>为什么需要它</h2>
+     * {@link #freezeNeighbours} 对上下 + 四个水平各放一块浮冰，于是放下一个液态寒冷，
+     * 俯视就是一个<b>轴对齐的十字</b>、竖直正好三格高。玩家自己拿桶倒一桶时这没什么，
+     * 但「冰雪的叹息」会在<b>爆心</b>放一格液态寒冷——那个十字就正好落在圆心，
+     * 把整片圆形冰面切成规规整整的四块，非常扎眼。
+     *
+     * <p>所以核弹那条路走这里：方块照放，只是不附带那份"见面礼"。
+     * 玩家倒桶、以及别的模组放置液态寒冷时，行为一字未变。
+     */
+    public static void placeQuietly(Level level, BlockPos pos) {
+        quietPlacement = true;
+        try {
+            level.setBlock(pos, ModBlocks.LIQUID_COLD.get().defaultBlockState(), Block.UPDATE_ALL);
+        } finally {
+            quietPlacement = false;
         }
     }
 
@@ -184,8 +215,9 @@ public class LiquidColdBlock extends LiquidBlock {
      */
     private static boolean isReplaceable(Level level, BlockPos pos, boolean airAndFluidOnly) {
         BlockState state = level.getBlockState(pos);
-        if (state.getBlock().defaultDestroyTime() < 0) {
-            // 基岩、屏障、命令方块、末地传送门框架这类不可破坏的方块永远不碰
+        if (FrostProof.isProtected(state)) {
+            // 基岩、屏障、命令方块、末地传送门框架这类不可破坏的方块，以及传送门，
+            // 永远不碰。名单见 FrostProof
             return false;
         }
         if (state.is(ModBlocks.LIQUID_COLD.get())) {

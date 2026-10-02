@@ -263,7 +263,8 @@ public final class FrostNovaBlast {
         if (state.is(ModBlocks.LIQUID_COLD.get())) {
             return false;
         }
-        return state.getBlock().defaultDestroyTime() >= 0;
+        // 基岩、屏障、传送门这类方块走统一名单，见 FrostProof
+        return !FrostProof.isProtected(state);
     }
 
     // ------------------------------------------------------------------

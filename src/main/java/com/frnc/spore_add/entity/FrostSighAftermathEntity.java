@@ -308,15 +308,21 @@ public class FrostSighAftermathEntity extends Entity {
     }
 
     /**
-     * 雾用的粒子与核弹爆发前那团云<b>完全一样</b>（{@code FROST_SIGH_CLOUD}，偶尔补一点更浓的
-     * {@code FROST_SIGH_HAZE}），所以"深蓝色"是一眼认得出的同一种东西。
+     * 冰雾撒一个粒子。
+     *
+     * <p>用的就是<b>冰霜新星那团霜雾的同一对粒子</b>：{@code FROST_MIST} 作主体、{@code FROST_SNOWFLAKE}
+     * 点缀，初速也照抄 {@code FrostNovaCloudEntity}（雾静止悬浮、雪花缓慢下飘）。
+     * 所以爆后这片领域看着就是"新星那团雾放大到半径 128、铺开十分钟"。
      */
     private void addMist(double x, double y, double z) {
-        boolean dense = random.nextInt(4) == 0;
+        // 大约 5 个里掺 1 个雪花——新星那边是 18:4，比例接近
+        boolean snowflake = random.nextInt(5) == 0;
         level().addParticle(
-                (dense ? ModParticles.FROST_SIGH_HAZE : ModParticles.FROST_SIGH_CLOUD).get(),
+                (snowflake ? ModParticles.FROST_SNOWFLAKE : ModParticles.FROST_MIST).get(),
                 x, y, z,
-                (random.nextDouble() - 0.5D) * 0.01D, 0.004D, (random.nextDouble() - 0.5D) * 0.01D);
+                (random.nextDouble() - 0.5D) * 0.02D,
+                snowflake ? -0.01D : 0.0D,
+                (random.nextDouble() - 0.5D) * 0.02D);
     }
 
     // ------------------------------------------------------------------
