@@ -192,6 +192,12 @@ public class LiquidColdBlock extends LiquidBlock {
             // 本 mod 自己的液态寒冷不冻：否则池子会把自己冻成冰，扩散中心也随之消失
             return false;
         }
+        if (state.isAir() && level.dimension().equals(Level.END)) {
+            // 末地里空气永远不换。末地是"空岛 + 大片虚空"的地形，把空气冻成冰等于朝虚空里凭空长出一大块
+            // 冰坨；那里的液态寒冷只该冻已有的方块（末地石等）。主世界/下界不受这条影响——
+            // 那两处把空气冻住是想要的效果（挖开的地道会被冰封上）。
+            return false;
+        }
         if (airAndFluidOnly) {
             return state.isAir() || !state.getFluidState().isEmpty();
         }

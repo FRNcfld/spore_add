@@ -129,11 +129,16 @@ public final class ModEvents {
     }
 
     /**
-     * 「烈阳」附魔：拦住冻伤的<b>施加</b>。
+     * 「烈阳」附魔：<b>满四件</b>时完全免疫冻伤。
      *
      * <p>用 {@code MobEffectEvent.Applicable} 而不是自己轮询实体：它正好在
      * {@code LivingEntity#canBeAffected} 里触发，所以不论施加方是本 mod 的冷却液 / 液态寒冷，
      * 还是 Spore 自己的 CDU、冰霜肿瘤、PCI 武器，都会被这一道挡下。
+     *
+     * <p><b>不足四件的情况不在这里处理。</b>这个事件只能允许或拒绝，改不了效果实例，
+     * 而"每件削弱 25%"必须改实例（时长与层数都要乘）。那一半交给
+     * {@code WarmthFrostbiteScalingMixin}——它在效果入体前把实例缩放好。
+     * 所以分工是：这里管"100% 直接不放行"，mixin 管"0~75% 放行但缩水"。
      */
     @SubscribeEvent
     public static void onEffectApplicable(MobEffectEvent.Applicable event) {
@@ -141,7 +146,7 @@ public final class ModEvents {
         if (frostbite == null || event.getEffectInstance().getEffect() != frostbite) {
             return;
         }
-        if (Warmth.isWorn(event.getEntity())) {
+        if (Warmth.resistanceFraction(event.getEntity()) >= 1.0F) {
             event.setResult(Event.Result.DENY);
         }
     }
@@ -166,11 +171,18 @@ public final class ModEvents {
                 && EnchantmentHelper.getItemEnchantmentLevel(ModEnchantments.WARMTH.get(), event.getTo()) > 0) {
             ModTriggers.WARMTH_EQUIPPED.trigger(player);
         }
-        if (Warmth.isWorn(entity)) {
+        // 只有"满四件、完全免疫"才把身上已有的冻伤清掉。
+        // 不足四件时按新规则是"削弱"而不是"免疫"，那就不该清除已经挂着的那份。
+        if (Warmth.resistanceFraction(entity) >= 1.0F) {
             MobEffect frostbite = SporeCompat.frostbite();
             if (frostbite != null && entity.hasEffect(frostbite)) {
                 entity.removeEffect(frostbite);
             }
+            // 光移除 buff 不够：屏幕结霜遮罩只看 getTicksFrozen() > 0，而冻结刻数是 Spore 的
+            // 冻伤 tick 直接 setTicksFrozen(+100) 叠上去的（见 FrostbiteAllMobsMixin 第三条），
+            // 移除 buff 之后那几百点还在，靠 aiStep 每 tick -2 要好几秒才退干净。
+            // 既然此刻已经"完全免疫"，就一并抹掉——否则玩家的观感是"穿回护甲了屏幕还白着"。
+            entity.setTicksFrozen(0);
         }
     }
 

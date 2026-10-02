@@ -1,8 +1,10 @@
 package com.frnc.spore_add.world;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.annotation.Nullable;
 
@@ -79,7 +81,7 @@ public final class FungalClearing {
             return;
         }
         // 配置表解析一次就够，别放进循环里
-        List<BlockPair> configured = parseConfiguredConversions();
+        Rules rules = rules();
 
         int r = Mth.ceil(radius);
         double limitSqr = radius * radius;
@@ -95,7 +97,7 @@ public final class FungalClearing {
                         continue;
                     }
                     BlockState state = level.getBlockState(pos);
-                    BlockState replacement = replacementFor(state, configured);
+                    BlockState replacement = rules.replacementFor(state);
                     if (replacement != null) {
                         level.setBlock(pos, replacement, CLEAR_FLAGS);
                     }
@@ -104,36 +106,104 @@ public final class FungalClearing {
         }
     }
 
-    /** 决定这个方块该变成什么；返回 {@code null} 表示不该动它。 */
+    /**
+     * 解析一次 Spore 的「感染方块|干净方块」表，得到一个可以反复使用的规则集。
+     *
+     * <p>给<b>球状</b>的 {@link #clear} 之外的调用方用的：冰雪的叹息要按列扫 5 万列，
+     * 逐列去解析配置表是纯浪费，所以把"解析"和"判断"拆开——解析一次，判断几百万次。
+     *
+     * <p>规则本身只有这一处实现（{@link Rules#replacementFor} 直接转调下面那个私有方法），
+     * 所以冰霜新星与冰雪的叹息不可能各清各的。
+     */
+    public static Rules rules() {
+        return new Rules(parseConfiguredConversions());
+    }
+
+    /** 一份已经解析好的规则集。只做纯判断，不碰世界。 */
+    public static final class Rules {
+
+        private final List<BlockPair> configured;
+
+        /**
+         * 方块 → 结论的缓存。
+         *
+         * <p><b>为什么非要有它。</b>冰雪的叹息要按列扫 5 万列、约 <b>2000 万个方块</b>，
+         * 而每个方块的判断在"没命中"那条路上要一路走完 {@code SporeCompat.cduConversion}
+         * ——那是一次 map 查找，外加它内部对"标签转换表"的遍历。实世界里的方块种类其实很少
+         * （石头、深板岩、泥土、水、空气……），按方块记下结论之后，一整场爆发只需要几百次真正的判断，
+         * 而不是两千万次。这一步把 {@code FrostSighBlast} 那条整列扫描的开销从"要盯着看"
+         * 拉回"可以忽略"。
+         *
+         * <p><b>按方块缓存是安全的</b>：命不命中只取决于方块本身。
+         * 方块状态的那部分差异（朝向、半砖类型……）只影响"复制哪些属性"，
+         * 而那一手在 {@link #replacementFor} 里对每个状态逐次做，不进缓存。
+         *
+         * <p>缓存不跨爆发复用，所以数据包中途重载最多影响当前这一次爆发。
+         */
+        private final Map<Block, Optional<Decision>> decisions = new HashMap<>();
+
+        private Rules(List<BlockPair> configured) {
+            this.configured = configured;
+        }
+
+        /** 决定这个方块该变成什么；返回 {@code null} 表示不该动它。 */
+        @Nullable
+        public BlockState replacementFor(BlockState state) {
+            Decision decision = decisions
+                    .computeIfAbsent(state.getBlock(), block -> Optional.ofNullable(decide(state, configured)))
+                    .orElse(null);
+            return decision == null ? null : apply(decision, state);
+        }
+    }
+
+    /**
+     * 一次判断的结论：该换成哪个方块，以及要不要按同名属性复制。
+     *
+     * <p>拆成"结论"与"应用"两步，就是为了让结论能按<b>方块</b>缓存——见 {@link Rules}。
+     */
+    private record Decision(Block target, boolean copyProperties) {
+    }
+
+    /**
+     * 按方块判断该换成什么。
+     *
+     * <p>{@code state} 只用来做标签判断与取方块，所以同一个方块的不同状态会得到同一个结论。
+     */
     @Nullable
-    private static BlockState replacementFor(BlockState state, List<BlockPair> configured) {
+    private static Decision decide(BlockState state, List<BlockPair> configured) {
         Block block = state.getBlock();
 
         if (block == Refs.REMAINS) {
-            return Refs.FROZEN_REMAINS.defaultBlockState();
+            return new Decision(Refs.FROZEN_REMAINS, false);
         }
         if (block == Refs.BILE) {
-            return Refs.CRUSTED_BILE.defaultBlockState();
+            return new Decision(Refs.CRUSTED_BILE, false);
         }
         if (state.is(Refs.BIOMASS) || block == Refs.MEMBRANE) {
-            return Refs.FROST_BURNED_BIOMASS.defaultBlockState();
+            return new Decision(Refs.FROST_BURNED_BIOMASS, false);
         }
 
         // 配置表优先于数据包表：那份配置默认就有内容，是 CDU 的主要机制
         for (BlockPair pair : configured) {
             if (block == pair.from()) {
-                return copyProperties(pair.to().defaultBlockState(), state);
+                return new Decision(pair.to(), true);
             }
         }
         Block fromJson = SporeCompat.cduConversion(block);
         if (fromJson != null) {
-            return copyProperties(fromJson.defaultBlockState(), state);
+            return new Decision(fromJson, true);
         }
 
         if (state.is(Refs.FUNGAL) || state.is(Refs.FOLIAGE)) {
-            return Blocks.AIR.defaultBlockState();
+            return new Decision(Blocks.AIR, false);
         }
         return null;
+    }
+
+    /** 把结论落成一个具体的方块状态（这一步才用到源状态，因为要复制属性）。 */
+    private static BlockState apply(Decision decision, BlockState state) {
+        BlockState target = decision.target().defaultBlockState();
+        return decision.copyProperties() ? copyProperties(target, state) : target;
     }
 
     /**

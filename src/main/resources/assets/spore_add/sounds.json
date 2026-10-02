@@ -42,5 +42,43 @@
       "minecraft:random/glass2",
       "minecraft:random/glass3"
     ]
+  },
+  "frost_sigh_armed": {
+    "subtitle": "subtitles.spore_add.frost_sigh_armed",
+    "sounds": [
+      "minecraft:block/end_portal/endportal"
+    ]
+  },
+  "frost_sigh_countdown": {
+    "subtitle": "subtitles.spore_add.frost_sigh_countdown",
+    "sounds": [
+      "minecraft:mob/warden/heartbeat_1",
+      "minecraft:mob/warden/heartbeat_2",
+      "minecraft:mob/warden/heartbeat_3",
+      "minecraft:mob/warden/heartbeat_4"
+    ]
+  },
+  "frost_sigh_imminent": {
+    "subtitle": "subtitles.spore_add.frost_sigh_imminent",
+    "sounds": [
+      "minecraft:block/conduit/activate"
+    ]
+  },
+  "frost_sigh_detonated": {
+    "subtitle": "subtitles.spore_add.frost_sigh_detonated",
+    "sounds": [
+      "minecraft:random/explode1",
+      "minecraft:random/explode2",
+      "minecraft:random/explode3",
+      "minecraft:random/explode4"
+    ]
+  },
+  "frost_sigh_ice_shatter": {
+    "subtitle": "subtitles.spore_add.frost_sigh_ice_shatter",
+    "sounds": [
+      "minecraft:random/glass1",
+      "minecraft:random/glass2",
+      "minecraft:random/glass3"
+    ]
   }
 }

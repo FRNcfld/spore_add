@@ -9,6 +9,7 @@
   "item.spore_add.liquid_cold_bucket": "液态寒冷桶",
   "item.spore_add.high_energy_fuel_bucket": "高能燃料桶",
   "item.spore_add.frost_nova": "冰霜新星",
+  "block.spore_add.frost_sigh": "冰雪的叹息",
 
   "advancements.spore_add.absolute_zero.title": "绝对零度",
   "advancements.spore_add.absolute_zero.description": "取得液态寒冷",
@@ -26,5 +27,28 @@
   "subtitles.spore_add.frost_nova_launch": "冰霜新星已发射",
   "subtitles.spore_add.frost_nova_charging": "冰霜新星已就绪",
   "subtitles.spore_add.frost_nova_imminent": "冰霜新星即将爆发",
-  "subtitles.spore_add.frost_nova_secondary": "冰霜新星已爆发"
+  "subtitles.spore_add.frost_nova_secondary": "冰霜新星已爆发",
+  "subtitles.spore_add.frost_sigh_armed": "冰雪的叹息已激活",
+  "subtitles.spore_add.frost_sigh_countdown": "冰雪的叹息正在充能",
+  "subtitles.spore_add.frost_sigh_imminent": "冰雪的叹息即将爆发",
+  "subtitles.spore_add.frost_sigh_detonated": "冰雪的叹息已爆发",
+  "subtitles.spore_add.frost_sigh_ice_shatter": "冰壳碎裂",
+
+  "entity.spore_add.frozen_capsule": "冰封掉落物",
+  "entity.spore_add.frost_sigh_cloud": "蘑菇云",
+  "entity.spore_add.frost_sigh_aftermath": "冰雪的叹息·残留",
+
+  "tooltip.spore_add.hold_shift": "按住 Shift 查看详情",
+  "tooltip.spore_add.frost_nova.range": "速度 %s 格/tick，引信 %s 秒 → 最大射程 %s 格",
+  "tooltip.spore_add.frost_nova.impact": "落点换冰半径 %s 格，冻伤半径 %s 格",
+  "tooltip.spore_add.frost_nova.frostbite": "落点冻伤 %s 秒 / %s 层",
+  "tooltip.spore_add.frost_nova.explosion": "爆炸强度 %s（伤害半径约 %s 格）",
+  "tooltip.spore_add.frost_nova.secondary": "二次爆炸 %s 秒后，范围 ×%s、强度 ×%s",
+  "tooltip.spore_add.frost_nova.charge": "蓄力 %s tick 拉满，不足 %s tick 不发射",
+
+  "tooltip.spore_add.frost_sigh.area": "影响半径 %s 格（圆形）",
+  "tooltip.spore_add.frost_sigh.countdown": "激活后 %s 秒爆发，冲击环 %s 秒扩完",
+  "tooltip.spore_add.frost_sigh.frostbite": "冻伤 %s 层 / %s 分钟，玩家冰封 %s 秒",
+  "tooltip.spore_add.frost_sigh.snow": "爆发后降雪 %s 分钟",
+  "tooltip.spore_add.frost_sigh.activate": "用冰霜新星右键激活（消耗 1 个）"
 }

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "activated=false": {
+      "model": "spore_add:block/frost_sigh"
+    },
+    "activated=true": {
+      "model": "spore_add:block/frost_sigh"
+    }
+  }
+}

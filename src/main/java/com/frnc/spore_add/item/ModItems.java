@@ -1,6 +1,7 @@
 package com.frnc.spore_add.item;
 
 import com.frnc.spore_add.SporeAdd;
+import com.frnc.spore_add.block.ModBlocks;
 import com.frnc.spore_add.fluid.ModFluids;
 
 import net.minecraft.world.item.BucketItem;
@@ -53,6 +54,18 @@ public final class ModItems {
      */
     public static final RegistryObject<Item> FROST_NOVA =
             ITEMS.register("frost_nova", () -> new FrostNovaItem(new Item.Properties().stacksTo(16)));
+
+    /**
+     * 「冰雪的叹息」的方块物品。
+     *
+     * <p>不可堆叠（需求 1）——它是一颗核弹，不是消耗品。
+     *
+     * <p>{@code ModBlocks.FROST_SIGH.get()} 放在 lambda 里：方块注册表先于物品注册表完成，
+     * 所以等到这个 lambda 被求值时方块已经在注册表里了。直接写在字段初始化式里则会提前解引用。
+     */
+    public static final RegistryObject<Item> FROST_SIGH =
+            ITEMS.register("frost_sigh", () -> new FrostSighItem(ModBlocks.FROST_SIGH.get(),
+                    new Item.Properties().stacksTo(1)));
 
     /**
      * 按原版水桶的属性造一个桶。

@@ -9,6 +9,7 @@
   "item.spore_add.liquid_cold_bucket": "Liquid Cold Bucket",
   "item.spore_add.high_energy_fuel_bucket": "High-Energy Fuel Bucket",
   "item.spore_add.frost_nova": "Frost Nova",
+  "block.spore_add.frost_sigh": "Frost Sigh",
 
   "advancements.spore_add.absolute_zero.title": "Absolute Zero",
   "advancements.spore_add.absolute_zero.description": "Obtain Liquid Cold",
@@ -26,5 +27,28 @@
   "subtitles.spore_add.frost_nova_launch": "Frost Nova launched",
   "subtitles.spore_add.frost_nova_charging": "Frost Nova ready",
   "subtitles.spore_add.frost_nova_imminent": "Frost Nova about to detonate",
-  "subtitles.spore_add.frost_nova_secondary": "Frost Nova detonated"
+  "subtitles.spore_add.frost_nova_secondary": "Frost Nova detonated",
+  "subtitles.spore_add.frost_sigh_armed": "Frost Sigh armed",
+  "subtitles.spore_add.frost_sigh_countdown": "Frost Sigh charging",
+  "subtitles.spore_add.frost_sigh_imminent": "Frost Sigh about to detonate",
+  "subtitles.spore_add.frost_sigh_detonated": "Frost Sigh detonated",
+  "subtitles.spore_add.frost_sigh_ice_shatter": "Ice shell shatters",
+
+  "entity.spore_add.frozen_capsule": "Frozen Loot",
+  "entity.spore_add.frost_sigh_cloud": "Frost Sigh Cloud",
+  "entity.spore_add.frost_sigh_aftermath": "Frost Sigh Aftermath",
+
+  "tooltip.spore_add.hold_shift": "Hold Shift for details",
+  "tooltip.spore_add.frost_nova.range": "Speed %s blocks/tick, fuse %s s → max range %s blocks",
+  "tooltip.spore_add.frost_nova.impact": "Impact: ice radius %s, frostbite radius %s",
+  "tooltip.spore_add.frost_nova.frostbite": "Impact frostbite: %s s / %s layers",
+  "tooltip.spore_add.frost_nova.explosion": "Explosion power %s (damage radius ~%s blocks)",
+  "tooltip.spore_add.frost_nova.secondary": "Secondary blast in %s s: range x%s, power x%s",
+  "tooltip.spore_add.frost_nova.charge": "Charge: %s ticks to full, below %s ticks nothing fires",
+
+  "tooltip.spore_add.frost_sigh.area": "Radius %s blocks (circular)",
+  "tooltip.spore_add.frost_sigh.countdown": "Detonates %s s after arming, shockwave sweeps in %s s",
+  "tooltip.spore_add.frost_sigh.frostbite": "Frostbite %s layers / %s min, players frozen %s s",
+  "tooltip.spore_add.frost_sigh.snow": "Snowfall for %s min after detonation",
+  "tooltip.spore_add.frost_sigh.activate": "Right-click with a Frost Nova to arm (consumes 1)"
 }

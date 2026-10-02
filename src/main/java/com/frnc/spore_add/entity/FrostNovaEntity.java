@@ -59,14 +59,6 @@ import net.minecraft.world.phys.Vec3;
  */
 public class FrostNovaEntity extends ThrowableItemProjectile {
 
-    /**
-     * 飞行速度，格/tick（1.5 约合 30 格/秒）。
-     *
-     * <p>刻意是常量、<b>不随蓄力变化</b>：蓄力影响的是落点爆发的威力（半径、层数、秒数），
-     * 弹道保持一致更容易预期，也让"直线飞行"这件事在满蓄力和最低蓄力下表现相同。
-     */
-    private static final double SPEED = 1.5D;
-
     /** 生成点沿视线前移的距离，免得弹体一出生就贴在发射者的碰撞箱里。 */
     private static final double MUZZLE_OFFSET = 0.5D;
 
@@ -117,7 +109,8 @@ public class FrostNovaEntity extends ThrowableItemProjectile {
 
         // 用 shoot 而不是 shootFromRotation：后者会把发射者自身的移动速度叠加进弹道，
         // 一边跑一边射就会出现固定偏差——正是需求要排除的"偏移"。inaccuracy 传 0 则不产生随机散布。
-        shoot(look.x, look.y, look.z, (float) SPEED, 0.0F);
+        // 速度来自配置（{@code speedPerTick}，格/tick），不随蓄力变化。
+        shoot(look.x, look.y, look.z, (float) SporeAddConfig.frostNovaSpeed(), 0.0F);
     }
 
     /** 弹体画面上就是这个物品的图标（原版 {@code ThrownItemRenderer} 会取它）。 */

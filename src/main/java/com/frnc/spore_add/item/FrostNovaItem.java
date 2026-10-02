@@ -1,9 +1,12 @@
 package com.frnc.spore_add.item;
 
+import java.util.List;
+
 import com.frnc.spore_add.SporeAddConfig;
 import com.frnc.spore_add.entity.FrostNovaEntity;
 import com.frnc.spore_add.sound.ModSounds;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -11,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.UseAnim;
 import net.minecraft.world.level.Level;
 
@@ -59,6 +63,46 @@ public class FrostNovaItem extends Item {
 
     public FrostNovaItem(Properties properties) {
         super(properties);
+    }
+
+    /**
+     * 按住 Shift 时展开详细数值，否则只给一行提示。
+     *
+     * <p><b>所有数字都是现读配置的</b>，不是写死的文案——改了 {@code config/spore_add-common.toml}
+     * 里的任何一个旋钮，这里显示的范围、秒数、层数都会跟着变。所以它同时也是一份"当前生效参数"的自检面板。
+     */
+    @Override
+    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+        if (!ItemTooltips.detailVisible()) {
+            ItemTooltips.addHoldShiftHint(tooltip);
+            return;
+        }
+
+        double speed = SporeAddConfig.frostNovaSpeed();
+        int fuseTicks = SporeAddConfig.frostNovaAutoDetonateTicks();
+        double range = speed * fuseTicks;
+        float power = SporeAddConfig.frostNovaExplosionPower(1.0D);
+
+        ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.range",
+                trim(speed), fuseTicks / 20, trim(range));
+        ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.impact",
+                SporeAddConfig.frostNovaBlockRadius(), SporeAddConfig.frostNovaEntityRadius());
+        ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.frostbite",
+                SporeAddConfig.frostNovaFrostbiteSeconds(), SporeAddConfig.frostNovaFrostbiteLevel());
+        ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.explosion",
+                trim(power), trim(power * 2.0D));
+        ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.secondary",
+                SporeAddConfig.frostNovaSecondaryDelayTicks() / 20,
+                trim(SporeAddConfig.frostNovaSecondaryRangeMultiplier()),
+                trim(SporeAddConfig.frostNovaSecondaryPowerMultiplier()));
+        ItemTooltips.addLine(tooltip, "tooltip.spore_add.frost_nova.charge",
+                SporeAddConfig.frostNovaChargeTicks(), SporeAddConfig.frostNovaMinChargeTicks());
+    }
+
+    /** 去掉多余的小数位：1.5 显示成 "1.5"、2.0 显示成 "2"。 */
+    private static String trim(double value) {
+        return value == Math.floor(value) ? String.valueOf((long) value) : String.format("%.1f", value);
     }
 
     @Override

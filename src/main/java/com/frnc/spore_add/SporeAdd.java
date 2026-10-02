@@ -1,10 +1,12 @@
 package com.frnc.spore_add;
 
 import com.frnc.spore_add.advancement.ModTriggers;
+import com.frnc.spore_add.block.ModBlockEntities;
 import com.frnc.spore_add.block.ModBlocks;
 import com.frnc.spore_add.effect.ModEffects;
 import com.frnc.spore_add.enchantment.ModEnchantments;
 import com.frnc.spore_add.entity.ModEntities;
+import com.frnc.spore_add.fluid.ModFluidInteractions;
 import com.frnc.spore_add.fluid.ModFluids;
 import com.frnc.spore_add.item.ModCreativeTabs;
 import com.frnc.spore_add.item.ModItems;
@@ -88,6 +90,7 @@ public class SporeAdd {
         ModEnchantments.register(modEventBus);
         ModParticles.register(modEventBus);
         ModSounds.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
         ModEntities.register(modEventBus);
         ModCreativeTabs.register(modEventBus);
 
@@ -104,6 +107,8 @@ public class SporeAdd {
         // 跨模组交互、能力注册等一次性初始化放这里。
         // 自定义进度判据：1.20.1 没有对应的注册表，只能在这里手动登记
         ModTriggers.registerAll();
+        // 流体接触岩浆的反应：必须等到这一步，注册表冻结之后才取得到 FluidType 的值
+        ModFluidInteractions.register();
         LOGGER.info("[SporeAdd] common setup done");
     }
 

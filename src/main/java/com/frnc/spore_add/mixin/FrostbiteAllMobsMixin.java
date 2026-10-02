@@ -3,6 +3,7 @@ package com.frnc.spore_add.mixin;
 import com.Harbinger.Spore.Effect.FrostBite;
 import com.frnc.spore_add.compat.SporeCompat;
 import com.frnc.spore_add.effect.FrostbiteLevels;
+import com.frnc.spore_add.enchantment.Warmth;
 
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
@@ -34,8 +35,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * 加进同一次则必然生效，而且顺带继承了那次结算的两个原版特性：对 {@code freeze_hurts_extra_types}
  * 内的实体 ×5、以及 {@code freeze} 属于 {@code bypasses_armor} 所以不吃护甲。
  *
- * <p>两个重定向都要求目标调用在该方法里<b>唯一</b>——已经用 {@code javap} 核对过：
- * {@code EntityType.is} 与 {@code LivingEntity.hurt} 各出现一次。
+ * <p>三个重定向都要求目标调用在该方法里<b>唯一</b>——已经用 {@code javap} 核对过：
+ * {@code EntityType.is}、{@code LivingEntity.hurt}、{@code LivingEntity.setTicksFrozen} 各出现一次。
  *
  * <h2>没有绕过的闸门</h2>
  * 那道 {@code if (amplifier < enduranceLevel) return;} 是<b>另一道</b>判断（不是标签那道），本 mixin 不动它。
@@ -69,5 +70,34 @@ public abstract class FrostbiteAllMobsMixin {
         MobEffectInstance frostbite = entity.getEffect(SporeCompat.frostbite());
         int amplifier = frostbite == null ? 0 : frostbite.getAmplifier();
         return entity.hurt(source, amount + FrostbiteLevels.bonusFreezeDamage(entity, amplifier));
+    }
+
+    /**
+     * 三、完全免疫的生物不给"冻僵"。
+     *
+     * <h2>为什么非拦不可</h2>
+     * {@code applyEffectTick} 的最后一句是 {@code entity.setTicksFrozen(entity.getTicksFrozen() + 100)}
+     * ——它<b>直接写</b>，完全不问 {@code canFreeze()}。所以 {@code WarmthFreezeMixin} 那道闸门管不到它：
+     * 只要身上挂着冻伤，就会周期性地把冻结刻数抬到 100 以上
+     * （{@code isDurationEffectTick} 是 {@code duration % 80 == 0}，也就是每 80 tick 一次。
+     * 原版那边每 tick 只退 2，所以从 +100 回到 0 要 50 tick——于是屏幕是"白 50 tick、清 30 tick"
+     * 的脉冲，而不是一直白着）。
+     *
+     * <p>而客户端那层屏幕结霜遮罩只认一件事——{@code Gui} 里的
+     * {@code if (player.getTicksFrozen() > 0) renderTextureOverlay(powder_snow_outline)}。
+     * 于是表现是：明明"免疫冻伤"，屏幕上却一直白茫茫一片，而且由于 {@code aiStep} 的衰减只有
+     * 每 tick -2，完全追不上这 +100。
+     *
+     * <p>拦在这里之后，"满四件烈阳"从"不受伤"变成真正意义上的"不受冻"：冻结刻数不再被抬起，
+     * 屏幕自然干净。不足四件时按 {@code resistanceFraction} 的规则照常放行——削弱不等于免疫。
+     */
+    @Redirect(
+            method = "applyEffectTick",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/world/entity/LivingEntity;setTicksFrozen(I)V"))
+    private void sporeAdd$noFrostForImmune(LivingEntity entity, int ticksFrozen) {
+        if (Warmth.resistanceFraction(entity) < 1.0F) {
+            entity.setTicksFrozen(ticksFrozen);
+        }
     }
 }

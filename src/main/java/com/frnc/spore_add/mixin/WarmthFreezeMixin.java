@@ -6,6 +6,7 @@ import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
@@ -30,6 +31,53 @@ public abstract class WarmthFreezeMixin {
     private void sporeAdd$warmArmorCannotFreeze(CallbackInfoReturnable<Boolean> cir) {
         if (Warmth.isWorn((LivingEntity) (Object) this)) {
             cir.setReturnValue(false);
+        }
+    }
+
+    /** vanilla 每 tick 把冻结刻数减掉这么多（见 {@code aiStep} 里那个 {@code Math.max(0, i - 2)}）。 */
+    private static final int BASE_DECAY = 2;
+
+    /** 额外衰减的补发周期，见 {@link #sporeAdd$warmthSpeedsUpFrostMelt}。 */
+    private static final int EXTRA_DECAY_PERIOD = 2;
+
+    /**
+     * 「烈阳」让已经吃到的细雪效果<b>消失得更快</b>。
+     *
+     * <h2>为什么是"加速消失"而不是"免伤"</h2>
+     * {@link #sporeAdd$warmArmorCannotFreeze} 只拦得住"将来"的冻结累积。已经积累在身上的冻结刻数
+     * 不会因为穿上护甲就消失——它本来要按 vanilla 的每 tick -2 慢慢退，而那个速度是固定的。
+     * 这一条把退的速度按件数加快：一件 +25%、两件 +50%、三件 +75%、四件<b>立即清零</b>。
+     *
+     * <h2>为什么不直接写成 {@code i - 2 * (1 + 抗性)}</h2>
+     * 因为那个值不一定是整数（一件是 2.5），而 {@code ticksFrozen} 是 int。这里改成
+     * "vanilla 照常减 2，再按 {@link #EXTRA_DECAY_PERIOD} 的相位补一次零头"：
+     * 长期平均正好是 {@code 2 × (1 + 抗性)}/tick，既精确又不需要给每个实体额外存一个小数累加器。
+     *
+     * <h2>成本</h2>
+     * 挂在 {@code aiStep} 的 RETURN 上（那是个很大的方法、有多个 return，但一次调用只会走其中一个）。
+     * 第一道判据是 {@code getTicksFrozen() <= 0}——一个同步数据的 int 读，几乎为零，
+     * 所以<b>绝大多数实体</b>（从没冻过的那些）每 tick 到这里就直接返回，
+     * 连那四次附魔查询都不会发生。
+     */
+    @Inject(method = "aiStep", at = @At("RETURN"))
+    private void sporeAdd$warmthSpeedsUpFrostMelt(CallbackInfo ci) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        // 与 vanilla 那段衰减一样只在服务端做：客户端的 ticksFrozen 是同步下来的，
+        // 在客户端自己改会让屏幕遮罩与服务端对不上
+        if (self.level().isClientSide() || self.getTicksFrozen() <= 0) {
+            return;
+        }
+        float resistance = Warmth.resistanceFraction(self);
+        if (resistance <= 0.0F) {
+            return;   // 没穿烈阳：vanilla 刚减掉的 2/tick 就是全部
+        }
+        if (resistance >= 1.0F) {
+            self.setTicksFrozen(0);   // 满四件：立即消失
+            return;
+        }
+        if (self.tickCount % EXTRA_DECAY_PERIOD == 0) {
+            int extra = Math.round(BASE_DECAY * resistance * EXTRA_DECAY_PERIOD);
+            self.setTicksFrozen(Math.max(0, self.getTicksFrozen() - extra));
         }
     }
 }

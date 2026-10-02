@@ -45,6 +45,48 @@ public final class ModParticles {
     public static final RegistryObject<SimpleParticleType> FROST_SHARD =
             PARTICLES.register("frost_shard", () -> new SimpleParticleType(false));
 
+    // ------------------------------------------------------------------
+    // 「冰雪的叹息」（核弹）用的一组
+    // ------------------------------------------------------------------
+    //
+    // 与上面三个刻意区分开：上面是**浅青**（色相 192~196、明度 60~76），
+    // 下面是**深靛蓝**（色相 229~256、明度 23~44）。色相与明度都有明确分界，
+    // 玩家一眼就能分出"这是新星"还是"那是核弹"。素材同样来自那个 MIT 粒子库。
+
+    /** 激活期的粒子云与冲击环。浓重紫蓝雾团。 */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_CLOUD =
+            PARTICLES.register("frost_sigh_cloud", () -> new SimpleParticleType(false));
+
+    /** 蘑菇云主体。填充率最高（0.66）的一团。 */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_HAZE =
+            PARTICLES.register("frost_sigh_haze", () -> new SimpleParticleType(false));
+
+    /** 中心最浓郁处。近黑的深蓝（明度 23），用来做"核心"的观感。 */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_CORE =
+            PARTICLES.register("frost_sigh_core", () -> new SimpleParticleType(false));
+
+    /** 爆发瞬间的闪光。 */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_FLARE =
+            PARTICLES.register("frost_sigh_flare", () -> new SimpleParticleType(false));
+
+    /**
+     * 降雪。
+     *
+     * <p>这一个<b>故意用浅色</b>——它是雪，不是核弹的烟。素材取自同一个库里最浅的一档雪粒。
+     */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_SNOW =
+            PARTICLES.register("frost_sigh_snow", () -> new SimpleParticleType(false));
+
+    /**
+     * 影响范围边界上的警示粒子。
+     *
+     * <p><b>这个是红橙色（色相约 13°），刻意不跟蓝色系走。</b>它要标的是"这条线以内都会被冻住"，
+     * 而深蓝的核弹粒子已经铺满了整个范围——再给边界配一个近蓝的颜色就分不出来了。
+     * 暖色在这个冷色系里跳出来，才有警示的意思。
+     */
+    public static final RegistryObject<SimpleParticleType> FROST_SIGH_WARNING =
+            PARTICLES.register("frost_sigh_warning", () -> new SimpleParticleType(false));
+
     private ModParticles() {
     }
 

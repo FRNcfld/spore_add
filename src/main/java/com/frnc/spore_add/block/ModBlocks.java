@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.material.PushReaction;
@@ -62,6 +63,32 @@ public final class ModBlocks {
     public static final RegistryObject<LiquidBlock> HIGH_ENERGY_FUEL =
             BLOCKS.register("high_energy_fuel",
                     () -> new HighEnergyFuelBlock(ModFluids.HIGH_ENERGY_FUEL, waterLikeBlock()));
+
+    /**
+     * 「冰雪的叹息」——本 mod 唯一的<b>非流体</b>方块，也是量级最大的一个。
+     *
+     * <p>属性刻意与三种流体完全不同：流体那套是"可替换、无碰撞、无掉落表"，而这个是一块实心的、
+     * 抗爆的、会掉落的方块。{@code strength(50, 1200)} 的抗爆值取得比黑曜石还高，
+     * 免得它被自己的核爆或别的爆炸掀掉。{@code lightLevel} 给 7 是为了在暗处也能看见它。
+     */
+    /**
+     * 「冰雪的叹息」方块本体。
+     *
+     * <p><b>挖掘等级是钻石镐起</b>：{@code requiresCorrectToolForDrops()} 负责"工具不对就不掉落物"，
+     * 具体到哪一档由数据包标签决定——本 mod 在 {@code data/minecraft/tags/blocks/} 下声明了
+     * {@code mineable/pickaxe} 与 {@code needs_diamond_tool}。两者缺一不可：
+     * 只加标签不加这个方法，任何工具都能挖下来；只加方法不加标签，则等同"随便什么镐都算对"。
+     *
+     * <p>硬度沿用 {@code 50.0}（与黑曜石同级），抗爆 1200。所以它是一块"要挖一会儿、
+     * 而且得带对镐子"的方块——激活之后更是彻底挖不动（见 {@code FrostSighBlock}）。
+     */
+    public static final RegistryObject<Block> FROST_SIGH =
+            BLOCKS.register("frost_sigh", () -> new FrostSighBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_BLUE)
+                    .strength(50.0F, 1200.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.GLASS)
+                    .lightLevel(state -> 7)));
 
     /**
      * 与原版水一致的流体方块属性。

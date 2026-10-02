@@ -3,6 +3,7 @@ package com.frnc.spore_add.world;
 import javax.annotation.Nullable;
 
 import com.frnc.spore_add.SporeAddConfig;
+import com.frnc.spore_add.block.ModBlocks;
 import com.frnc.spore_add.compat.SporeCompat;
 import com.frnc.spore_add.entity.FrostNovaCloudEntity;
 import com.frnc.spore_add.entity.FrostNovaIceCoreEntity;
@@ -247,9 +248,22 @@ public final class FrostNovaBlast {
         return inner ? Blocks.BLUE_ICE.defaultBlockState() : Blocks.PACKED_ICE.defaultBlockState();
     }
 
-    /** 只有不可破坏的方块被豁免；其余（含本 mod 自己的流体）一律替换，理由见类注释。 */
+    /**
+     * 不可破坏的方块与本 mod 自己的液态寒冷被豁免；其余一律替换，理由见类注释。
+     *
+     * <p>液态寒冷要豁免是因为它<b>不是普通方块而是扩散中心</b>：它的冰扩散、区域寒冷登记、以及
+     * "范围内的冰不融化"全都以源头方块为锚点（见 {@code LiquidColdBlock} 与 {@code FrozenChunks}）。
+     * 把源头冻成冰，那一片的整套机制会一起消失，而且玩家辛苦铺的水池会被一发新星抹掉。
+     * {@code LiquidColdBlock} 自己的冻结逻辑出于同一个理由也豁免液态寒冷。
+     *
+     * <p>冷却液与高能燃料<b>不豁免</b>——它们没有这种"源头"语义，被冻成冰是合理的。
+     */
     private static boolean isReplaceable(Level level, BlockPos pos) {
-        return level.getBlockState(pos).getBlock().defaultDestroyTime() >= 0;
+        BlockState state = level.getBlockState(pos);
+        if (state.is(ModBlocks.LIQUID_COLD.get())) {
+            return false;
+        }
+        return state.getBlock().defaultDestroyTime() >= 0;
     }
 
     // ------------------------------------------------------------------

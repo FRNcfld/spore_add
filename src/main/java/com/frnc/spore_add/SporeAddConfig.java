@@ -30,11 +30,13 @@ public final class SporeAddConfig {
 
     private static final FrostNova FROST_NOVA;
     private static final LiquidCold LIQUID_COLD;
+    private static final FrostSigh FROST_SIGH;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         FROST_NOVA = new FrostNova(builder);
         LIQUID_COLD = new LiquidCold(builder);
+        FROST_SIGH = new FrostSigh(builder);
         SPEC = builder.build();
     }
 
@@ -80,6 +82,11 @@ public final class SporeAddConfig {
     /** 满蓄力时的爆炸强度。原版 TNT 是 4.0（见 {@code PrimedTnt#explode}），默认 8.0 即两倍。 */
     public static float frostNovaExplosionPower(double power) {
         return (float) (FROST_NOVA.explosionPower.get() * powerFactor(power));
+    }
+
+    /** 弹体的飞行速度，格/tick。 */
+    public static double frostNovaSpeed() {
+        return FROST_NOVA.speedPerTick.get();
     }
 
     /**
@@ -169,6 +176,93 @@ public final class SporeAddConfig {
     }
 
     // ------------------------------------------------------------------
+    // 冰雪的叹息（核弹）
+    // ------------------------------------------------------------------
+
+    /** 影响半径（格）。圆形，不是球。 */
+    public static int frostSighRadius() {
+        return FROST_SIGH.radius.get();
+    }
+
+    /** 冲击环从中心扩散到边缘所需的秒数。 */
+    public static int frostSighShockwaveTicks() {
+        // 至少 1 tick，否则除法会炸
+        return Math.max(1, FROST_SIGH.shockwaveSeconds.get() * 20);
+    }
+
+    /** 激活后到爆发所需的 tick 数。 */
+    public static int frostSighCountdownTicks() {
+        return FROST_SIGH.countdownSeconds.get() * 20;
+    }
+
+    /** 是否在倒计时期间强制加载圆盘覆盖的区块。 */
+    public static boolean frostSighForceLoadChunks() {
+        return FROST_SIGH.forceLoadChunks.get();
+    }
+
+    /** 玩家被冲击环冰封的 tick 数。 */
+    public static int frostSighFrozenTicks() {
+        return FROST_SIGH.frozenSeconds.get() * 20;
+    }
+
+    /** 冲击环施加的冻伤<b>显示层数</b>（= amplifier + 1）。 */
+    public static int frostSighFrostbiteLevel() {
+        return FROST_SIGH.frostbiteLevel.get();
+    }
+
+    /** 冲击环施加的冻伤持续 tick 数。 */
+    public static int frostSighFrostbiteTicks() {
+        return FROST_SIGH.frostbiteMinutes.get() * 60 * 20;
+    }
+
+    /** 降雪持续的 tick 数。 */
+    public static int frostSighSnowTicks() {
+        return FROST_SIGH.snowMinutes.get() * 60 * 20;
+    }
+
+    /** 冰雾持续的 tick 数。 */
+    public static int frostSighMistTicks() {
+        return FROST_SIGH.mistMinutes.get() * 60 * 20;
+    }
+
+    /** 爆发后把影响范围内的生物群系改成哪一个（字符串形式的生物群系 id）。 */
+    public static String frostSighColdBiome() {
+        return FROST_SIGH.coldBiome.get();
+    }
+
+    /** 是否把冲击环扫过的掉落物冰封起来。 */
+    public static boolean frostSighFreezeItems() {
+        return FROST_SIGH.freezeItems.get();
+    }
+
+    /** 单次爆发最多冰封多少个掉落物。 */
+    public static int frostSighFreezeMaxEntities() {
+        return FROST_SIGH.freezeMaxEntities.get();
+    }
+
+    /**
+     * 冰壳自动融化的 tick 数。
+     *
+     * <p>返回 <b>0 表示"永不自动融化"</b>（只能敲碎），<b>不是</b>"立刻融化"。
+     * 调用方拿 0 当哨兵值判断要不要设到期时刻，所以配置里的 0 必须原样透传——
+     * 这里刻意不套 {@code Math.max(1, ...)}，那会把"永不融化"悄悄变成"1 tick 后融化"。
+     */
+    public static int frostSighIceMeltTicks() {
+        return FROST_SIGH.iceMeltSeconds.get() * 20;
+    }
+
+    /** 2 号冲击环比 1 号环晚多少 tick 起跑。 */
+    public static int frostSighSecondRingDelayTicks() {
+        return FROST_SIGH.secondRingDelaySeconds.get() * 20;
+    }
+
+    /** 蘑菇云的存活 tick 数。 */
+    public static int frostSighMushroomTicks() {
+        // 至少 1 tick，否则云生成的那一 tick 就把自己删了
+        return Math.max(1, FROST_SIGH.mushroomSeconds.get() * 20);
+    }
+
+    // ------------------------------------------------------------------
     // 各段配置的定义
     // ------------------------------------------------------------------
 
@@ -183,6 +277,7 @@ public final class SporeAddConfig {
         private final ForgeConfigSpec.DoubleValue minPowerFraction;
         private final ForgeConfigSpec.IntValue chargeTicks;
         private final ForgeConfigSpec.IntValue minChargeTicks;
+        private final ForgeConfigSpec.DoubleValue speedPerTick;
         private final ForgeConfigSpec.IntValue autoDetonateSeconds;
         private final ForgeConfigSpec.IntValue secondaryDelaySeconds;
         private final ForgeConfigSpec.IntValue primaryCloudSeconds;
@@ -223,16 +318,23 @@ public final class SporeAddConfig {
             this.minPowerFraction = builder
                     .comment("最低蓄力（刚够发射）时的威力系数，0 ~ 1。",
                             "0.3 表示刚够发射时半径、层数、秒数都只有满蓄力的 30%，随蓄力线性升到 100%。")
-                    .defineInRange("minPowerFraction", 0.30D, 0.0D, 1.0D);
+                    .defineInRange("minPowerFraction", 0.20D, 0.0D, 1.0D);
 
             this.chargeTicks = builder
                     .comment("拉满所需的时间（tick）。20 与原版弓一致。1 ~ 200。")
-                    .defineInRange("chargeTicks", 20, 1, 200);
+                    .defineInRange("chargeTicks", 100, 1, 200);
 
             this.minChargeTicks = builder
                     .comment("低于这个蓄力时间（tick）松手就完全不发射。0 ~ 200。",
                             "比 chargeTicks 还大时会被夹到 chargeTicks。")
-                    .defineInRange("minChargeTicks", 4, 0, 200);
+                    .defineInRange("minChargeTicks", 20, 0, 200);
+
+            this.speedPerTick = builder
+                    .comment("弹体的飞行速度。0.1 ~ 10.0，默认 1.5。",
+                            "**单位是格/tick，不是格/秒**：1.5 格/tick 约合 30 格/秒，",
+                            "配合 5 秒引信射程约 150 格。填 1.5 得到的不是 1.5 格/秒。",
+                            "速度不随蓄力变化——蓄力影响的是落点爆发的威力，弹道保持一致更好预期。")
+                    .defineInRange("speedPerTick", 1.5D, 0.1D, 10.0D);
 
             this.autoDetonateSeconds = builder
                     .comment("弹体投出后多少秒仍未命中就自动引爆。1 ~ 60。",
@@ -243,7 +345,7 @@ public final class SporeAddConfig {
             this.secondaryDelaySeconds = builder
                     .comment("首次爆炸后，冰球变成的延时炸弹在多少秒后二次引爆。1 ~ 600。",
                             "二次引爆会把那批冰清掉（变成空气），所以地表不会永久留着一个冰球。")
-                    .defineInRange("secondaryDelaySeconds", 20, 1, 600);
+                    .defineInRange("secondaryDelaySeconds", 30, 1, 600);
 
             this.primaryCloudSeconds = builder
                     .comment("一次爆炸那团霜雾持续多少秒。1 ~ 600。",
@@ -267,6 +369,118 @@ public final class SporeAddConfig {
                             "填 1.0 就是「只有范围变大、强度不变」。",
                             "层数会被夹到 127 上限（amplifier 的字节限制），超出部分不生效。")
                     .defineInRange("secondaryPowerMultiplier", 1.5D, 1.0D, 5.0D);
+
+            builder.pop();
+        }
+    }
+
+    /** 冰雪的叹息那一段。 */
+    private static final class FrostSigh {
+
+        private final ForgeConfigSpec.IntValue radius;
+        private final ForgeConfigSpec.IntValue shockwaveSeconds;
+        private final ForgeConfigSpec.IntValue countdownSeconds;
+        private final ForgeConfigSpec.BooleanValue forceLoadChunks;
+        private final ForgeConfigSpec.IntValue frozenSeconds;
+        private final ForgeConfigSpec.IntValue frostbiteLevel;
+        private final ForgeConfigSpec.IntValue frostbiteMinutes;
+        private final ForgeConfigSpec.IntValue snowMinutes;
+        private final ForgeConfigSpec.IntValue mistMinutes;
+        private final ForgeConfigSpec.ConfigValue<String> coldBiome;
+        private final ForgeConfigSpec.BooleanValue freezeItems;
+        private final ForgeConfigSpec.IntValue freezeMaxEntities;
+        private final ForgeConfigSpec.IntValue iceMeltSeconds;
+        private final ForgeConfigSpec.IntValue mushroomSeconds;
+        private final ForgeConfigSpec.IntValue secondRingDelaySeconds;
+
+        private FrostSigh(ForgeConfigSpec.Builder builder) {
+            builder.comment("冰雪的叹息（核弹方块）").push("frostSigh");
+
+            this.radius = builder
+                    .comment("影响半径（格）。圆形，不是球。1 ~ 256。",
+                            "圆盘内的 (x,z) 列数按 π·r² 增长：半径 128 是 51,433 列、跨约 226 个区块。",
+                            "调大它会让冲击环每 tick 要处理的列数成平方增长。")
+                    .defineInRange("radius", 128, 1, 256);
+
+            this.shockwaveSeconds = builder
+                    .comment("冲击环从中心扩散到边缘所需的秒数。1 ~ 300。",
+                            "**这一档是整个方块最要紧的性能旋钮**：环的最外圈每 tick 要处理的列数",
+                            "约为 2π·R/(20×该秒数)。半径 128 时：20 秒 → 每 tick 约 257 列（可行）；",
+                            "1 秒 → 每 tick 约 5147 列（必然卡服）。")
+                    .defineInRange("shockwaveSeconds", 20, 1, 300);
+
+            this.countdownSeconds = builder
+                    .comment("用冰霜新星激活后，多少秒爆发。1 ~ 600。")
+                    .defineInRange("countdownSeconds", 60, 1, 600);
+
+            this.forceLoadChunks = builder
+                    .comment("倒计时期间是否强制加载圆盘覆盖的区块。",
+                            "关掉的话，未加载的区块不会被影响——玩家事后走过去会看到圆盘边缘一圈「没被冻到」，",
+                            "像效果没做完。开着则效果完整，但那片区域（半径 128 时约 226 个区块）会常驻加载几十秒。")
+                    .define("forceLoadChunks", true);
+
+            this.frozenSeconds = builder
+                    .comment("冲击环扫过时，玩家被冰封（无法移动）的秒数。0 ~ 300。0 表示不冰封。")
+                    .defineInRange("frozenSeconds", 10, 0, 300);
+
+            this.frostbiteLevel = builder
+                    .comment("冲击环扫过时施加的冻伤显示层数（= amplifier + 1）。1 ~ 127。",
+                            "默认 100 是刻意做成必死的量级；它同样受「烈阳」的按件削弱影响。")
+                    .defineInRange("frostbiteLevel", 100, 1, 127);
+
+            this.frostbiteMinutes = builder
+                    .comment("上述冻伤持续多少分钟。1 ~ 60。")
+                    .defineInRange("frostbiteMinutes", 10, 1, 60);
+
+            this.snowMinutes = builder
+                    .comment("爆发后降雪持续多少分钟。1 ~ 60。默认 10（需求原本写 60，但那是很重的负担）。",
+                            "注意原版天气是按维度的，这里只做到「玩家附近撒雪粒子」；",
+                            "真正的雪景靠把生物群系改成寒带、让原版降水在该处自然变成雪。")
+                    .defineInRange("snowMinutes", 10, 1, 60);
+
+            this.mistMinutes = builder
+                    .comment("冰雾持续多少分钟。1 ~ 60。",
+                            "冰雾用的是核弹爆发前那团云的同一个粒子，深蓝色，铺在 2 号环扫过的区域上，",
+                            "范围跟着 2 号环的环半径长。雾里的生物会被持续施加冻伤，",
+                            "**等级与时长就是上面那一组 frostbiteLevel / frostbiteMinutes**。")
+                    .defineInRange("mistMinutes", 10, 1, 60);
+
+            this.coldBiome = builder
+                    .comment("爆发后把影响范围内的生物群系改成哪一个。",
+                            "填完整的生物群系 id，例如 minecraft:snowy_plains、minecraft:ice_spikes、",
+                            "minecraft:frozen_peaks、minecraft:snowy_taiga。填错会在日志里报一行警告并跳过改群系。")
+                    .define("coldBiome", "minecraft:snowy_plains");
+
+            this.freezeItems = builder
+                    .comment("是否把冲击环范围内的掉落物冰封起来：外面裹一层可敲碎的半透明冰壳，",
+                            "敲碎才掉出来。这些掉落物主要是被击杀的生物掉出来的战利品。")
+                    .define("freezeItems", true);
+
+            this.freezeMaxEntities = builder
+                    .comment("单次爆发最多冰封多少个掉落物。0 ~ 4096。",
+                            "默认 512。一发打在刷怪塔上的核弹能掉出非常多的东西，",
+                            "每件都配一层冰壳（一个实体）会明显吃性能，所以留一道闸门。",
+                            "到顶之后剩下的掉落物就地留着，不封冰。")
+                    .defineInRange("freezeMaxEntities", 512, 0, 4096);
+
+            this.iceMeltSeconds = builder
+                    .comment("冰壳多少秒后自动融化、把东西掉出来。0 ~ 86400。",
+                            "**0 表示永不自动融化**（只能敲碎），不是「立刻融化」。",
+                            "默认 0。想给「一地冰壳没人清理」留一个安全阀就调成别的值。")
+                    .defineInRange("iceMeltSeconds", 0, 0, 86400);
+
+            this.mushroomSeconds = builder
+                    .comment("爆发后蘑菇云持续多少秒。1 ~ 600。",
+                            "形状按「底部涌浪 + 茎 + 伞盖」采样撒粒子，尺寸随半径缩放，粒子总量有硬上限。")
+                    .defineInRange("mushroomSeconds", 45, 1, 600);
+
+            this.secondRingDelaySeconds = builder
+                    .comment("2 号冲击环比 1 号环晚多少秒起跑。0 ~ 60。",
+                            "两个环的职责是分开的：**1 号环只负责击杀**环内的生物，**2 号环负责其余全部效果**",
+                            "（铺冰、冻流体、清真菌、施加冻伤、冰封玩家）。",
+                            "留出这段间隔，是为了让「先死、后冻」在观感上分得开：先是一圈冲击过去清场，",
+                            "隔一拍才铺开冰与霜。填 0 就是两环同时推。")
+                    .defineInRange("secondRingDelaySeconds", 2, 0, 60);
 
             builder.pop();
         }

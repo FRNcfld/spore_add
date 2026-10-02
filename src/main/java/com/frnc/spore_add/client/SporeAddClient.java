@@ -1,10 +1,14 @@
 package com.frnc.spore_add.client;
 
 import com.frnc.spore_add.SporeAdd;
+import com.frnc.spore_add.SporeAddConfig;
 import com.frnc.spore_add.client.particle.FrostMoteParticle;
 import com.frnc.spore_add.entity.FrostNovaCloudEntity;
 import com.frnc.spore_add.entity.FrostNovaEntity;
 import com.frnc.spore_add.entity.FrostNovaIceCoreEntity;
+import com.frnc.spore_add.entity.FrostSighAftermathEntity;
+import com.frnc.spore_add.entity.FrostSighCloudEntity;
+import com.frnc.spore_add.entity.FrostSighShockwaveEntity;
 import com.frnc.spore_add.entity.ModEntities;
 import com.frnc.spore_add.fluid.ModFluids;
 import com.frnc.spore_add.item.ModItems;
@@ -73,6 +77,16 @@ public final class SporeAddClient {
                 context -> new InvisibleEntityRenderer<FrostNovaCloudEntity>(context));
         event.registerEntityRenderer(ModEntities.FROST_NOVA_ICE_CORE.get(),
                 context -> new InvisibleEntityRenderer<FrostNovaIceCoreEntity>(context));
+        event.registerEntityRenderer(ModEntities.FROST_SIGH_SHOCKWAVE.get(),
+                context -> new InvisibleEntityRenderer<FrostSighShockwaveEntity>(context));
+        // 冰封生物的冰壳：唯一一个要自己画的（一个按体型拉伸的冰块），
+        // 里面的生物是它的乘客，由原版渲染器照常绘制，这里不用管
+        event.registerEntityRenderer(ModEntities.FROZEN_CAPSULE.get(),
+                FrozenCapsuleRenderer::new);
+        event.registerEntityRenderer(ModEntities.FROST_SIGH_CLOUD.get(),
+                context -> new InvisibleEntityRenderer<FrostSighCloudEntity>(context));
+        event.registerEntityRenderer(ModEntities.FROST_SIGH_AFTERMATH.get(),
+                context -> new InvisibleEntityRenderer<FrostSighAftermathEntity>(context));
     }
 
     /**
@@ -97,6 +111,23 @@ public final class SporeAddClient {
                 sprites -> FrostMoteParticle.provider(sprites, 0.5F, 0.9F, 30, 60, -0.008F));
         event.registerSpriteSet(ModParticles.FROST_SHARD.get(),
                 sprites -> FrostMoteParticle.provider(sprites, 0.4F, 1.0F, 10, 20, 0.18F));
+
+        // 「冰雪的叹息」那一组：同样是共用实现，只是尺寸/透明度/寿命不同。
+        // 尺寸给得比新星那组大得多——核弹的体量摆在那里，小粒子撑不起来。
+        event.registerSpriteSet(ModParticles.FROST_SIGH_CLOUD.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 2.6F, 0.50F, 60, 110, 0.0F));
+        event.registerSpriteSet(ModParticles.FROST_SIGH_HAZE.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 3.2F, 0.60F, 80, 140, 0.0F));
+        event.registerSpriteSet(ModParticles.FROST_SIGH_CORE.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 1.6F, 0.80F, 40, 70, 0.0F));
+        event.registerSpriteSet(ModParticles.FROST_SIGH_FLARE.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 1.2F, 0.90F, 20, 40, 0.05F));
+        event.registerSpriteSet(ModParticles.FROST_SIGH_SNOW.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 0.4F, 0.90F, 40, 80, -0.01F));
+        // 警示粒子：透明度压到 0.45、寿命也短，做出"淡淡的"效果。
+        // 它是边界标记不是演出主体，抢戏就本末倒置了。
+        event.registerSpriteSet(ModParticles.FROST_SIGH_WARNING.get(),
+                sprites -> FrostMoteParticle.provider(sprites, 0.9F, 0.45F, 30, 60, 0.0F));
     }
 
     private static void registerFluidRenderLayers() {
@@ -145,7 +176,14 @@ public final class SporeAddClient {
                     if (entity == null || entity.getUseItem() != stack) {
                         return 0.0F;
                     }
-                    float charge = (float) (stack.getUseDuration() - entity.getUseItemRemainingTicks()) / 20.0F;
+                    // 除以**配置里**的 chargeTicks，不是原版弓那个写死的 20。
+                    // 模型里的两档阈值 0.65 / 0.9 是比例，所以只要这里归一化对了，
+                    // 改 chargeTicks 之后三段蓄力外观仍然均匀铺满整个蓄力过程。
+                    // 之前写死 20 时，chargeTicks 一旦改成 100，动画会在第一秒内走完三段、
+                    // 剩下四秒卡在最后一段。
+                    int chargeTicks = SporeAddConfig.frostNovaChargeTicks();
+                    float charge = (float) (stack.getUseDuration() - entity.getUseItemRemainingTicks())
+                            / (float) chargeTicks;
                     return Mth.clamp(charge, 0.0F, 1.0F);
                 });
 

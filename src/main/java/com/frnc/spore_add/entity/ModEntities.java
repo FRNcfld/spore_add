@@ -68,6 +68,70 @@ public final class ModEntities {
                     .updateInterval(20)
                     .build("spore_add:frost_nova_ice_core"));
 
+    /**
+     * 「冰雪的叹息」的爆发本体（往外推的冲击环）。
+     *
+     * <p>它自己不可见、粒子全由服务端下发，所以客户端不需要追踪它——
+     * {@code clientTrackingRange(0)} 即可，省掉一份没用的实体同步。
+     */
+    public static final RegistryObject<EntityType<FrostSighShockwaveEntity>> FROST_SIGH_SHOCKWAVE =
+            ENTITY_TYPES.register("frost_sigh_shockwave", () -> EntityType.Builder
+                    .<FrostSighShockwaveEntity>of(FrostSighShockwaveEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(0)
+                    .updateInterval(Integer.MAX_VALUE)
+                    .build("spore_add:frost_sigh_shockwave"));
+
+    /**
+     * 冰封生物的那层冰壳。
+     *
+     * <p>尺寸给一个中性默认值（{@code 0.9 × 0.9}）：真正的碰撞箱由实体自己按被冰封生物的体型
+     * 覆写 {@code getDimensions} 算，这里填什么都不影响运行，只影响"还没定尺寸时"的那一瞬间。
+     *
+     * <p>{@code fireImmune()} 是必要的：冰壳本身不该着火。它虽然一打就碎，
+     * 但被火焰点着后持续掉血会在玩家没碰它的情况下自己碎掉。
+     *
+     * <p>{@code clientTrackingRange(10)} 而<b>不是</b> 0：它必须被客户端看见（要画冰壳、
+     * 也要让里面的生物被渲染），所以得进追踪范围。{@code updateInterval(20)} 因为它生成之后就再也不动了。
+     */
+    public static final RegistryObject<EntityType<FrozenCapsuleEntity>> FROZEN_CAPSULE =
+            ENTITY_TYPES.register("frozen_capsule", () -> EntityType.Builder
+                    .<FrozenCapsuleEntity>of(FrozenCapsuleEntity::new, MobCategory.MISC)
+                    .sized(0.9F, 0.9F)
+                    .fireImmune()
+                    .clientTrackingRange(10)
+                    .updateInterval(20)
+                    .build("spore_add:frozen_capsule"));
+
+    /**
+     * 爆发后的蘑菇云。
+     *
+     * <p>它自己不可见（注册到 {@code InvisibleEntityRenderer}），观感全靠客户端撒粒子，
+     * 所以追踪范围要够大：{@code 17} 个区块 = 272 格，覆盖配置上限 256 的半径。
+     * <b>调大配置里的 radius 时要回来改这里</b>，否则站在远端的玩家看不到蘑菇云。
+     */
+    public static final RegistryObject<EntityType<FrostSighCloudEntity>> FROST_SIGH_CLOUD =
+            ENTITY_TYPES.register("frost_sigh_cloud", () -> EntityType.Builder
+                    .<FrostSighCloudEntity>of(FrostSighCloudEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(17)
+                    .updateInterval(20)
+                    .build("spore_add:frost_sigh_cloud"));
+
+    /**
+     * 爆发后留在爆心的**降雪与冰雾**。
+     *
+     * <p>同蘑菇云：不可见、客户端撒粒子，追踪范围同样取 272 格。它由服务端用区块票钉住爆心
+     * 那一个区块，所以哪怕玩家走远，雪与雾也不会停——这两种效果合成一个实体正是为了只有一张票。
+     */
+    public static final RegistryObject<EntityType<FrostSighAftermathEntity>> FROST_SIGH_AFTERMATH =
+            ENTITY_TYPES.register("frost_sigh_aftermath", () -> EntityType.Builder
+                    .<FrostSighAftermathEntity>of(FrostSighAftermathEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(17)
+                    .updateInterval(20)
+                    .build("spore_add:frost_sigh_aftermath"));
+
     private ModEntities() {
     }
 

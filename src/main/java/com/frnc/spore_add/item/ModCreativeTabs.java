@@ -52,6 +52,7 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.LIQUID_COLD_BUCKET.get());
                         output.accept(ModItems.HIGH_ENERGY_FUEL_BUCKET.get());
                         output.accept(ModItems.FROST_NOVA.get());
+                        output.accept(ModItems.FROST_SIGH.get());
                         // 附魔书不是注册项，得自己构造出来
                         output.accept(warmthBook());
                     })

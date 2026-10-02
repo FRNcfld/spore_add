@@ -53,6 +53,31 @@ public final class ModSounds {
             SOUND_EVENTS.register("frost_nova_secondary",
                     () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("frost_nova_secondary")));
 
+    /** 「冰雪的叹息」被冰霜新星激活。低沉的嗡鸣——"核弹已就绪"的提示。 */
+    public static final RegistryObject<SoundEvent> FROST_SIGH_ARMED =
+            SOUND_EVENTS.register("frost_sigh_armed",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("frost_sigh_armed")));
+
+    /** 倒计时中的心跳。频率随倒计时加快。 */
+    public static final RegistryObject<SoundEvent> FROST_SIGH_COUNTDOWN =
+            SOUND_EVENTS.register("frost_sigh_countdown",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("frost_sigh_countdown")));
+
+    /** 即将爆发（最后 15 秒）。 */
+    public static final RegistryObject<SoundEvent> FROST_SIGH_IMMINENT =
+            SOUND_EVENTS.register("frost_sigh_imminent",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("frost_sigh_imminent")));
+
+    /** 已经爆发。 */
+    public static final RegistryObject<SoundEvent> FROST_SIGH_DETONATED =
+            SOUND_EVENTS.register("frost_sigh_detonated",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("frost_sigh_detonated")));
+
+    /** 冰封生物的冰壳被打碎。沿用的是原版的玻璃碎裂声，只换字幕。 */
+    public static final RegistryObject<SoundEvent> FROST_SIGH_ICE_SHATTER =
+            SOUND_EVENTS.register("frost_sigh_ice_shatter",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("frost_sigh_ice_shatter")));
+
     private ModSounds() {
     }
 

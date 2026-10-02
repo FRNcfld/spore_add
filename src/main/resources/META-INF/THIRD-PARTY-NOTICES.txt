@@ -1,4 +1,20 @@
-本工程 assets/spore_add/textures/particle/ 下的以下 3 个粒子贴图不是原创，来自第三方 MIT 许可的素材库：
+本工程 assets/spore_add/textures/particle/ 下的以下 8 个粒子贴图不是原创，来自第三方 MIT 许可的素材库：
+
+    冰霜新星用：
+    frost_mist.png          （素材原名 nebula 系列之外的 frost_mist）
+    frost_snowflake.png
+    frost_shard.png
+
+    冰雪的叹息（核弹）用：
+    frost_sigh_cloud.png    （素材原名 nebula_cloud_puff）
+    frost_sigh_haze.png     （素材原名 nebula_cloud_haze）
+    frost_sigh_core.png     （素材原名 star_cluster）
+    frost_sigh_flare.png    （素材原名 abyss_flare）
+    frost_sigh_snow.png     （素材原名 frost_mote_0）
+    frost_sigh_warning.png  （素材原名 ember_mote_2）
+
+（重命名只是为了在本工程内按用途归类，图像内容未作任何修改。）
+
 
 （本说明文件放在 META-INF/ 而不是贴图旁边：资源包加载器会扫描 textures/ 下的每一个文件，
 不认识非图片的文件，会报 "Invalid path in pack" 的 ERROR。放在这里既能随 jar 分发，

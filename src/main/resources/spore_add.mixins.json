@@ -10,6 +10,7 @@
     "FrostbiteAllMobsMixin",
     "WarmthFreezeMixin",
     "WarmthPowderSnowMixin",
+    "WarmthFrostbiteScalingMixin",
     "LiquidColdRangeMixin"
   ],
   "client": [
