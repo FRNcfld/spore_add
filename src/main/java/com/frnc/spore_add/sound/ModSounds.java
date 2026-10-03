@@ -92,6 +92,64 @@ public final class ModSounds {
             SOUND_EVENTS.register("frost_sigh_ice_shatter",
                     () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("frost_sigh_ice_shatter")));
 
+    // ------------------------------------------------------------------
+    // 拾荒者：一套只属于它的字幕
+    // ------------------------------------------------------------------
+
+    /*
+     * 为什么它需要一套自己的音效事件：拾荒者的模型、贴图、音效<b>全部继承</b>菌染人类
+     * （见 ScavengerRenderer 的类注释），所以不看行为根本分不出它和普通菌染人类。
+     * 而字幕是按<b>声音事件</b>查的，只有换成我们自己的事件，字幕才可能写「拾荒者」。
+     *
+     * 音频一律沿用现成的（Spore 的菌染人类那套 / 原版的拾取与脚步），一个字都不新录：
+     * 听感与原来完全一致，变的只是字幕——这正合需求里的「隐藏式字幕」。
+     */
+
+    /** 环境音。音频与菌染人类完全相同（spore:growl1..5），只是字幕写成拾荒者。 */
+    public static final RegistryObject<SoundEvent> SCAVENGER_AMBIENT =
+            SOUND_EVENTS.register("scavenger_ambient",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("scavenger_ambient")));
+
+    /** 受伤。沿用 Spore 的受伤音（spore:slash / slash2）。 */
+    public static final RegistryObject<SoundEvent> SCAVENGER_HURT =
+            SOUND_EVENTS.register("scavenger_hurt",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("scavenger_hurt")));
+
+    /** 死亡。同上。 */
+    public static final RegistryObject<SoundEvent> SCAVENGER_DEATH =
+            SOUND_EVENTS.register("scavenger_death",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("scavenger_death")));
+
+    /**
+     * 捡起一件掉落物。
+     *
+     * <p>音频是原版的 {@code random/pop}——原版自己的「拾起物品」用的就是它（配 pitch 2.0）。
+     * 这里调到 1.8，听起来比玩家拾取略沉一点，不至于和玩家自己的拾取音混在一起分不清。
+     */
+    public static final RegistryObject<SoundEvent> SCAVENGER_PICKUP =
+            SOUND_EVENTS.register("scavenger_pickup",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("scavenger_pickup")));
+
+    /**
+     * 逃跑。
+     *
+     * <p>音频还是那两声低吼，但<b>音调拉高</b>——同一份素材，听起来就是惊慌的短叫，
+     * 与它平时的环境音一耳朵就能分开。
+     */
+    public static final RegistryObject<SoundEvent> SCAVENGER_FLEE =
+            SOUND_EVENTS.register("scavenger_flee",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("scavenger_flee")));
+
+    /**
+     * 开始走动。
+     *
+     * <p>音频是原版的草脚步（{@code step/grass1..6}），音量压到 0.25——它只是个「提醒你
+     * 附近有拾荒者在活动」的轻响，不该盖过真正的脚步声。
+     */
+    public static final RegistryObject<SoundEvent> SCAVENGER_STEP =
+            SOUND_EVENTS.register("scavenger_step",
+                    () -> SoundEvent.createVariableRangeEvent(SporeAdd.id("scavenger_step")));
+
     private ModSounds() {
     }
 

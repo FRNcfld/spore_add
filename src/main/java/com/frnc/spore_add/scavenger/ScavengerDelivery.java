@@ -3,10 +3,12 @@ package com.frnc.spore_add.scavenger;
 import java.util.Comparator;
 import java.util.List;
 
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddFungusConfig;
 import com.frnc.spore_add.compat.SporeCompat;
+import com.frnc.spore_add.debug.SporeAddDebug;
+import com.frnc.spore_add.fungus.CollectLootGoal;
 import com.frnc.spore_add.fungus.FungusCombat;
-import com.frnc.spore_add.hatred.HatredData;
 import com.frnc.spore_add.hatred.HatredValues;
 
 import net.minecraft.nbt.CompoundTag;
@@ -18,24 +20,37 @@ import net.minecraft.world.phys.AABB;
 /**
  * 需求 4：拾荒者把收获交给谁。按<b>优先级链</b>判一次，命中即停。
  *
- * <h2>三条路，顺序不能换</h2>
+ * <h2>四级链，顺序不能换</h2>
  * <ol>
  *   <li><b>已与心智链接</b> → 整笔交给最近的<b>心智</b>（Spore 的 biomass）。
  *       链接状态是 Spore 自己给的：{@code Proto#scanForHosts} 会给范围内的每个感染体置
- *       {@code linked}，所以"附近有心智"这件事不需要我们判断——白送。</li>
+ *       {@code linked}。附近没有同维度心智时它会把整笔还回来，自然落到下一级。</li>
  *   <li><b>否则，若附近有够格又残血的同伙</b> → 折算成<b>回血</b>。
  *       够格 = 等级不低于 {@code healMinTier}，残血 = 血量低于 {@code healWoundedFraction}。
  *       按血量比例最低的优先，最多同时治 {@code healTargetCount} 个（这个数随存活时间从
  *       {@code healMinTargets} 涨到 {@code healMaxTargets}）。</li>
- *   <li><b>否则</b> → 折算成<b>进化点</b>分给附近的真菌（用 Spore 自己的
- *       {@code setEvoPoints}/{@code setKills}，也就是 {@code awardKillScore} 那套状态）。
- *       拾荒者不参战、拿不到杀戮点，但它用捡来的东西替同伙攒进化——这就是它的核心价值。</li>
+ *   <li><b>否则，若身上还揣得下</b> → <b>先存着</b>，这一档<b>不消耗任何资源</b>。
+ *       这是常态出口：以前"存着"只是前两级都没命中的副作用，现在它是显式的一级。
+ *       之所以要显式，是因为「存满了该去找队友」这个行为需要一个明确的"没满"状态——
+ *       而旧实现的第 3 级（折算进化点）几乎总能成功，资源根本留不住。</li>
+ *   <li><b>连存都存不下了</b> → 兜底折算成<b>进化点</b>分给附近的真菌（用 Spore 自己的
+ *       {@code setEvoPoints}/{@code setKills}）。拾荒者不参战、拿不到杀戮点，
+ *       但它用捡来的东西替同伙攒进化——这就是它的核心价值。</li>
  * </ol>
  *
  * <h2>「没送出去就退回来」</h2>
- * 本方法<b>返回实际用掉的资源数</b>。第 3 条路上可能凑不够 1 个进化点（换算速率默认 0.1，
- * 也就是手里不足 10 点资源时），这时返回 0、调用方把资源原样留在拾荒者身上，等下次捡到东西
- * 凑够了再送。不退的话，一只孤零零的拾荒者会把每一笔收获都变成"不到 1 个进化点"的零头丢掉。
+ * 本方法<b>返回实际用掉的资源数</b>，调用方把差额留回拾荒者身上。第 3 档与第 4 档
+ * （凑不够 1 个进化点、或附近没有能进化的同伙）都会让一部分资源退回去，等下次凑够了再送。
+ * 不退的话，一只孤零零的拾荒者会把每一笔收获都变成零头丢掉。
+ *
+ * <p><b>注意第 3 档的返回值语义</b>：它把 {@code left} 归零表示"这一笔不用再找下家了"，
+ * 而不是"用掉了"——所以那一部分不计入返回值，最终由调用方写回暂存。那正是"存在它身上"
+ * 的实现方式（载体就是 {@code CollectLootGoal} 的那个暂存累加器，没有第三个账本）。
+ *
+ * <h2>为什么不把剩余资源推进世界暂存</h2>
+ * 旧实现在"链接了心智但附近没心智"时会把整笔塞进 {@code HatredData.pending}（世界级、
+ * 无上限、所有生产者共用）。那会让"拾荒者自己攒的一小堆"变成全服共享、永不丢失的钱包，
+ * 与"存满了要找队友"正好冲突：永远不会满，也就永远不用找队友。
  */
 public final class ScavengerDelivery {
 
@@ -46,31 +61,95 @@ public final class ScavengerDelivery {
     }
 
     /**
-     * 把 {@code amount} 点资源送出去。
+     * 把 {@code amount} 点资源送出去。四级链，命中哪一级就在哪一级停。
      *
      * @return 实际用掉的资源数；调用方要把差额退还给拾荒者（见类注释）
      */
     public static int deliver(Scavenger scavenger, ServerLevel level, int amount) {
+        return deliver(scavenger, level, amount, true);
+    }
+
+    /**
+     * 把身上存着的资源整笔推出去——「专程去找队友」到位时调这个。
+     *
+     * <p>与 {@link #deliver} 的唯一区别是<b>不许再存回去</b>：那个方法在「揣得下」时会把资源
+     * 原样留着（那是常态），而这里人都已经走到接收者面前了，再留着就等于白跑一趟。
+     *
+     * @return 实际送出去的量
+     */
+    public static int flush(Scavenger scavenger, ServerLevel level) {
+        double stored = CollectLootGoal.pendingResource(scavenger);
+        int whole = Mth.floor(stored);
+        if (whole <= 0) {
+            return 0;
+        }
+        int used = deliver(scavenger, level, whole, false);
+        CollectLootGoal.setPendingResource(scavenger, stored - used);
+        return used;
+    }
+
+    /**
+     * @param allowStorage 允许走「先存着」那一级吗。{@code true} = 常态（捡到东西时），
+     *                     {@code false} = 专程去交付（见 {@link #flush}）
+     */
+    private static int deliver(Scavenger scavenger, ServerLevel level, int amount, boolean allowStorage) {
         if (amount <= 0) {
             return 0;
         }
-        // 一、链接了心智 → 整笔给它
+        int left = amount;
+        int used = 0;
+        int toHivemind = 0;
+        int healed = 0;
+        int kept = 0;
+
+        // 一、隶属于某个心智 → 交给最近的那个心智
+        // 注意它附近没心智时会把整笔原样还回来，于是自然落到下一级
         if (scavenger.getLinked()) {
-            int leftover = SporeCompat.grantResourcesToNearestHivemind(level, scavenger.position(), amount);
-            if (leftover > 0) {
-                // 附近没有同维度的心智：先存起来，等有心智了再补发（复用已有的暂存区）
-                HatredData.get(level).addPending(leftover);
-            }
-            return amount;
+            int leftover = SporeCompat.grantResourcesToNearestHivemind(level, scavenger.position(), left);
+            toHivemind = left - leftover;
+            used += toHivemind;
+            left = leftover;
         }
 
         // 二、有够格又残血的同伙 → 折算回血
-        if (healWoundedAllies(scavenger, level, amount)) {
-            return amount;
+        // 治疗优先于「存着」：同伙正在流血，而存着只是换个地方放着
+        if (left > 0 && healWoundedAllies(scavenger, level, left)) {
+            healed = left;
+            used += left;
+            left = 0;
         }
 
-        // 三、折算进化点分给附近真菌
-        return grantEvoPoints(scavenger, level, amount);
+        // 三、先存着。【这一档不消耗任何资源】——left 归零表示"这一笔不用再找下家了"，
+        // 而不是"用掉了"。它最终会由调用方写回暂存，那正是"存在它身上"的实现方式。
+        if (allowStorage && left > 0 && hasStorageRoom(scavenger, left)) {
+            kept = left;
+            left = 0;
+        }
+
+        // 四、连存都存不下了，才兜底折算进化点
+        int evo = 0;
+        if (left > 0) {
+            evo = grantEvoPoints(scavenger, level, left);
+            used += evo;
+        }
+
+        // 四级链各走了多少，是「拾荒者捡的货到底去哪了」的唯一答案：
+        // 全都进"存着"说明它附近既没心智也没残血同伙——那正是要它去找队友的状态。
+        SporeAddDebug.log(Area.SCAVENGER, "交付 {}（链接={}）：给心智 {}、治疗同伙 {}、存着 {}、折算进化点 {}",
+                amount, scavenger.getLinked(), toHivemind, healed, kept, evo);
+        return used;
+    }
+
+    /**
+     * 身上还揣得下这么多资源吗。
+     *
+     * <p>这是个<b>启发式</b>判断，不是硬保证：真正的上限由 {@code CollectLootGoal#collect}
+     * 在写回暂存时夹住。这里问它只是为了决定"要不要退而求其次去换进化点"——
+     * 差个一格半格无所谓，反正越界的那部分会被丢掉。
+     */
+    private static boolean hasStorageRoom(Scavenger scavenger, int amount) {
+        double cap = SporeAddFungusConfig.scavengerStorageCap(scavenger.survivalMinutes());
+        return CollectLootGoal.pendingResource(scavenger) + amount <= cap;
     }
 
     // ------------------------------------------------------------------

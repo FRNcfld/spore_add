@@ -1,5 +1,6 @@
 package com.frnc.spore_add.effect;
 
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.compat.SporeCompat;
 import com.frnc.spore_add.network.ModNetwork;
 
@@ -24,13 +25,9 @@ import net.minecraft.world.entity.LivingEntity;
  */
 public final class IgnitableContact {
 
-    /**
-     * 可燃的持续时间：10 秒。
-     *
-     * <p>两个来源都用这个值。注意它会覆盖 Spore 焦油原本的 100 tick（5 秒）——vanilla 在 amplifier
-     * 相同时取更长的那个时长，所以泡在焦油里最终是 10 秒，与泡在高能燃料里一致。
-     */
-    private static final int DURATION_TICKS = 200;
+    // 可燃的持续时间来自配置（combustion.ignitableDurationTicks，默认 200 = 10 秒），在方法里读。
+    // 两个来源（高能燃料 / Spore 焦油）都用它，所以泡在焦油里最终也是 10 秒——
+    // vanilla 在 amplifier 相同时取更长的那个时长，于是这一项覆盖了焦油原本的 100 tick。
 
     private IgnitableContact() {
     }
@@ -55,15 +52,16 @@ public final class IgnitableContact {
         // 只在等级真的变了（也就是每秒那一级）或者 buff 缺席/快到期时才施加。
         // 本方法每 tick 都会被调用，而 addEffect 会走一遍 canBeAffected 并在 Forge 总线上 post
         // MobEffectEvent.Applicable——一池燃料里泡着一群生物时，每 tick 无条件调用就是白白刷事件。
+        int duration = SporeAddPlayerConfig.combustionIgnitableDurationTicks();
         MobEffectInstance current = entity.getEffect(ignitable);
-        boolean needsRefresh = current == null || current.getDuration() < DURATION_TICKS - 20;
+        boolean needsRefresh = current == null || current.getDuration() < duration - 20;
         if (level == before && !needsRefresh) {
             return;
         }
 
         // amplifier 固定 0：等级存在 BuffLevels 里，amplifier 有 127 的字节上限，扛不住无上限的等级。
         // 界面上那个数字由客户端从同步过来的数据自绘，与 amplifier 无关。
-        entity.addEffect(new MobEffectInstance(ignitable, DURATION_TICKS, 0, false, true));
+        entity.addEffect(new MobEffectInstance(ignitable, duration, 0, false, true));
 
         if (level != before) {
             ModNetwork.syncLevels(entity);

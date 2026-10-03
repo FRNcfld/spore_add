@@ -10,6 +10,8 @@
   "item.spore_add.high_energy_fuel_bucket": "High-Energy Fuel Bucket",
   "item.spore_add.frost_nova": "Frost Nova",
   "block.spore_add.frost_sigh": "Frost Sigh",
+  "item.spore_add.frost_nova_0": "Frost Nova (WIP)",
+  "block.spore_add.frost_sigh_0": "Frost Sigh (WIP)",
 
   "advancements.spore_add.absolute_zero.title": "Absolute Zero",
   "advancements.spore_add.absolute_zero.description": "Obtain Liquid Cold",
@@ -56,7 +58,6 @@
   "message.spore_add.raid_dread": "Tremble...",
   "message.spore_add.raid_arena": "The ground splits open.",
   "message.spore_add.raid_waves": "The swarm closes in (%s waves)...",
-  "message.spore_add.raid_begin": "They are coming.",
   "message.spore_add.raid_survived": "You endured.",
   "message.spore_add.raid_failed": "The swarm has taken your measure.",
 
@@ -72,6 +73,7 @@
   "message.spore_add.scan.buff_reduction": "    Damage reduction %s",
   "message.spore_add.scan.buff_final_damage": "    Final damage bonus %s",
   "message.spore_add.raid_fizzled": "The swarm recedes...",
+  "message.spore_add.sweep": "The fungus has swept this dimension clean...",
 
   "entity.spore_add.scavenger": "Scavenger",
   "item.spore_add.scavenger_spawn_egg": "Scavenger Spawn Egg",
@@ -83,11 +85,26 @@
   "command.spore_add.hatred.threshold": "  Raid tier: %s",
   "command.spore_add.hatred.set": "Set %s's hatred to %s",
 
+  "command.spore_add.debug.header": "Debug checkpoints (master: %s):",
+  "command.spore_add.debug.area": "  %s: %s",
+  "command.spore_add.debug.state_on": "on",
+  "command.spore_add.debug.state_off": "off",
+  "command.spore_add.debug.set_master": "Debug checkpoint master switch set to %s (written to config)",
+  "command.spore_add.debug.set_area": "Debug checkpoint %s set to %s (written to config)",
+  "command.spore_add.debug.unknown_area": "No such area: %s. Available: %s",
+
   "sounds.spore.engine": "Engine running",
   "sounds.spore.gast_ambient": "Gastgeber growling",
   "sounds.spore.nuke": "Nuclear detonation",
   "sounds.spore.saw_sound": "Saw blade spinning",
   "sounds.spore.spit": "Spitting",
   "sounds.spore.surgery": "Performing surgery",
-  "sounds.spore.tumor": "Tumor bursting"
+  "sounds.spore.tumor": "Tumor bursting",
+
+  "subtitles.spore_add.scavenger_ambient": "Scavenger growling",
+  "subtitles.spore_add.scavenger_hurt": "Scavenger hurt",
+  "subtitles.spore_add.scavenger_death": "Scavenger dies",
+  "subtitles.spore_add.scavenger_pickup": "Scavenger picks something up",
+  "subtitles.spore_add.scavenger_flee": "Scavenger flees",
+  "subtitles.spore_add.scavenger_step": "Scavenger moving"
 }

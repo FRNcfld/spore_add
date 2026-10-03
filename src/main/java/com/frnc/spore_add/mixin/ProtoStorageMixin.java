@@ -3,7 +3,9 @@ package com.frnc.spore_add.mixin;
 import java.util.List;
 
 import com.Harbinger.Spore.Sentities.Organoids.Proto;
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddFungusConfig;
+import com.frnc.spore_add.debug.SporeAddDebug;
 import com.frnc.spore_add.hivemind.HivemindStorage;
 
 import net.minecraft.core.BlockPos;
@@ -45,21 +47,31 @@ public abstract class ProtoStorageMixin {
     private void sporeAdd$storeInsteadOfSummon(int decision, BlockPos pos, CallbackInfo ci) {
         Proto self = (Proto) (Object) this;
 
-        // 与 Spore 一致：BlockPos.ZERO 是"没有目标点"的哨兵值
+        // 四个 return 各打一行——「存储到底有没有生效」的答案就在这四行里：
+        // 一行都不出 = 注入没生效（或根本没造过东西）；出的是前两行 = 正常空转；
+        // 出第三行 = 候选表里有我们不认识的类型；出第四行 = 存储满了。
+        // 频率是 Proto 的制造节拍（默认 200 tick 一次，袭击期间快 6 倍），按心智计数，
+        // 不是逐 tick，所以直接 log() 而不加 on() 守卫。
+        // 用 MIXIN 而不是 HIVEMIND：这里首先要回答的是"注入进没进来"。
         if (pos.equals(BlockPos.ZERO)) {
+            SporeAddDebug.log(Area.MIXIN, "存储判定：没有目标点（pos=ZERO），走 Spore 原路");
             return;
         }
         List<?> team = self.getDecisionList(decision);
         if (team == null || team.isEmpty()) {
+            SporeAddDebug.log(Area.MIXIN, "存储判定：decision {} 的候选表为空，走 Spore 原路", decision);
             return;
         }
 
         // 挑一只：与 Spore 用的是同一个方法，所以"造出来的会是什么"完全一致
         Entity summoned = self.entityResourceLocation(self.getRandom().nextInt(team.size()), (List) team);
         if (summoned == null || !HivemindStorage.isStorable(summoned)) {
+            SporeAddDebug.log(Area.MIXIN, "存储判定：{} 不是可存储的类型，走 Spore 原路", summoned);
             return;   // 不认识的东西照旧走 Spore 原路
         }
         if (!HivemindStorage.tryStore(self, summoned)) {
+            SporeAddDebug.log(Area.MIXIN, "存储判定：存储已满（上限 {}），让它照常进世界",
+                    SporeAddFungusConfig.hivemindStoreMaxCount());
             return;   // 存储满了 → 不拦，让它照常进世界
         }
 
@@ -67,6 +79,8 @@ public abstract class ProtoStorageMixin {
         // 挑出来的那个临时实例只是"用来取 NBT 的样板"，NBT 已经存进存储了。
         // 它从没进过世界，所以丢弃它不触发任何世界事件。
         summoned.discard();
+        SporeAddDebug.log(Area.MIXIN, "存储判定：{} 已收进存储，耗 {} 生物质",
+                summoned.getType(), SporeAddFungusConfig.hivemindStoreCost());
         ci.cancel();
     }
 }

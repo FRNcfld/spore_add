@@ -1,6 +1,6 @@
 {
   "values": [
-    "create:blaze_cake",
+    { "id": "create:blaze_cake", "required": false },
     "spore:gastric_biomass_block"
   ]
 }

@@ -1,6 +1,8 @@
 package com.frnc.spore_add.hatred;
 
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddFungusConfig;
+import com.frnc.spore_add.debug.SporeAddDebug;
 import com.frnc.spore_add.fungus.Resources;
 import com.frnc.spore_add.raid.RaidManager;
 
@@ -79,7 +81,7 @@ public final class HatredManager {
      * <h2>两个入口共用这一份</h2>
      * <ul>
      *   <li>死于真菌之手（需求 6）——{@code HatredEvents#onDeath} 里那条；</li>
-     *   <li>袭击失败（{@code arenaTimeoutSeconds} 到点时仍没把场上真菌清干净）——
+     *   <li>袭击失败（{@code raid.arena.timeoutSeconds} 到点时仍没把场上真菌清干净）——
      *       {@code RaidManager#tickArena} 那条。</li>
      * </ul>
      * 需求明确说了后者"走玩家被真菌击杀的那条线"，所以两处必须是<b>同一段代码</b>，
@@ -120,9 +122,20 @@ public final class HatredManager {
     private static void afterChange(ServerPlayer player, double before, double after) {
         PlayerHatredBuffs.refresh(player);
 
-        if (HatredValues.thresholdIndex(after) > HatredValues.thresholdIndex(before)
-                && player.getRandom().nextDouble() < SporeAddFungusConfig.raidTriggerChance()) {
-            RaidManager.tryStart(player);
+        long tierBefore = HatredValues.thresholdIndex(before);
+        long tierAfter = HatredValues.thresholdIndex(after);
+        if (tierAfter > tierBefore) {
+            double chance = SporeAddFungusConfig.raidTriggerChance();
+            double roll = player.getRandom().nextDouble();
+            // 「越档了却没打起来」有两种成因：越档根本没发生（恨意值没到下一档），
+            // 或者掷骰没中。合成一行就分不清是哪种，所以越档与掷骰一起打出来。
+            // 注意骰子只在越档时才掷——与改动前的短路行为一致，不能为了打日志把它提前。
+            SporeAddDebug.log(Area.HATRED, "越档掷骰：{} → {}（档位 {} → {}），概率 {}，掷出 {} → {}",
+                    before, after, tierBefore, tierAfter, chance, roll,
+                    roll < chance ? "触发袭击" : "不触发");
+            if (roll < chance) {
+                RaidManager.tryStart(player);
+            }
         }
     }
 }

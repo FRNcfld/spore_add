@@ -1,7 +1,10 @@
 package com.frnc.spore_add.entity;
 
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.compat.SporeCompat;
 import com.frnc.spore_add.particle.ModParticles;
+import com.frnc.spore_add.world.FungalClearing;
+import com.frnc.spore_add.world.MistClearing;
 
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.nbt.CompoundTag;
@@ -134,6 +137,12 @@ public class FrostNovaCloudEntity extends Entity {
         }
         if (tickCount % FROSTBITE_INTERVAL_TICKS == 0) {
             applyFrostbite();
+        }
+        // 雾还在的时候一直按 CDU 的规则清真菌方块（需求：冰雾在消散前持续产生 CDU 的效果）。
+        // **每次整球扫一遍**：这团雾半径只有十几格（不到两万方块），一次扫完比按列分批简单得多。
+        // 核弹那团雾铺满半径 128 的地面，才需要分批推进——见 MistClearing 的类注释。
+        if (MistClearing.isEnabled() && tickCount % SporeAddPlayerConfig.mistClearIntervalTicks() == 0) {
+            FungalClearing.clear(level(), blockPosition(), getRadius());
         }
     }
 

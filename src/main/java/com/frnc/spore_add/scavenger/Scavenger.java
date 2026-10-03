@@ -1,5 +1,6 @@
 package com.frnc.spore_add.scavenger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,7 +12,19 @@ import com.Harbinger.Spore.Sentities.BaseEntities.Infected;
 import com.Harbinger.Spore.Sentities.BasicInfected.InfectedHuman;
 import com.Harbinger.Spore.Sentities.Variants.ScamperVariants;
 import com.frnc.spore_add.SporeAddFungusConfig;
+import com.frnc.spore_add.fungus.CollectLootGoal;
+import com.frnc.spore_add.sound.ModSounds;
+import com.mojang.logging.LogUtils;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -19,8 +32,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.level.Level;
+import org.slf4j.Logger;
 
 /**
  * 拾荒者：菌染人类的变体，阵营里的<b>后勤</b>。
@@ -60,6 +73,35 @@ import net.minecraft.world.level.Level;
  * </ol>
  */
 public class Scavenger extends InfectedHuman {
+
+    // ------------------------------------------------------------------
+    // 只属于拾荒者的隐藏式字幕
+    // ------------------------------------------------------------------
+
+    /**
+     * 环境音。换成自己的声音事件之后，字幕写的就是「拾荒者低吼」而不是「菌染者低吼」。
+     *
+     * <p><b>音频一个字节都没换</b>：{@code sounds.json} 里指向的还是 Spore 那五个 ogg
+     * （{@code spore:growl1..5}），所以听感与原来完全一样，变的只有字幕。
+     * 这是刻意的——它的模型、贴图、音效三者本来就与菌染人类完全一致（见 {@code ScavengerRenderer}
+     * 的类注释），光靠听分不出它们，字幕是唯一能分辨的途径。
+     */
+    @Override
+    protected SoundEvent getAmbientSound() {
+        return ModSounds.SCAVENGER_AMBIENT.get();
+    }
+
+    /** 受伤。音频沿用 Spore 的受伤音，只换字幕。 */
+    @Override
+    protected SoundEvent getHurtSound(DamageSource source) {
+        return ModSounds.SCAVENGER_HURT.get();
+    }
+
+    /** 死亡。同上。 */
+    @Override
+    protected SoundEvent getDeathSound() {
+        return ModSounds.SCAVENGER_DEATH.get();
+    }
 
     /**
      * 「此刻正在构造的这只就是拾荒者」——只在构造那一瞬间有意义的一个标志。
@@ -119,12 +161,26 @@ public class Scavenger extends InfectedHuman {
         // 第一要务：察觉危险就跑，残血无条件跑
         goalSelector.addGoal(SporeAddFungusConfig.scavengerFleePriority(), new FleeDangerGoal(this));
 
+        // 存满了就去交付。**夹在逃跑与拾荒之间**：存满时这一条优先于继续捡东西
+        // （需求：存储即将蓄满时去寻找队友），但仍然让位于逃跑（命比货重要）。
+        // 用 min 夹一下是为了兜住"使用者把 lootPriority 调到 1"的情况——那时两条同级，
+        // 而同级里先注册的赢，所以这一条仍然排在前（见下面拾荒那行的注册顺序）。
+        goalSelector.addGoal(Math.min(1, SporeAddFungusConfig.scavengerLootPriority()),
+                new ScavengerSeekAllyGoal(this));
+
         // 拾荒。优先级来自配置，默认 2——必须比逃跑低（数字大），否则它会为了捡东西而不跑
         goalSelector.addGoal(SporeAddFungusConfig.scavengerLootPriority(), new ScavengerLootGoal(this));
 
-        // 以下几项照抄 Spore 给普通感染体的配置，只是去掉了所有攻击相关的东西
+        // 以下几项照抄 Spore 给普通感染体的配置（优先级 3/4/4/5/6/7、闲逛 0.8、受惊 1.5），
+        // 只是去掉了所有攻击相关的东西。
+        //
+        // **这些优先级与移速刻意不开放配置**：它们不是玩法旋钮，而是"这只生物像 Spore 的普通感染体"
+        // 这件事本身。开放出来只会诱人把 AI 顺序调坏（比如让吃残骸抢在逃跑前面）。
+        // 真正该由使用者决定的两个优先级（逃跑、拾荒）已经在配置里，见上面两行。
+        // 闲逛用自己那个"朝战利品偏"的版本（见 ScavengerWanderGoal），不是原版的纯随机闲逛。
+        // 优先级与移速都不变（4 / 0.8），只是换了选落点的方式。
         goalSelector.addGoal(3, new LocalTargettingGoal(this));
-        goalSelector.addGoal(4, new RandomStrollGoal(this, 0.8D));
+        goalSelector.addGoal(4, new ScavengerWanderGoal(this, 0.8D));
         goalSelector.addGoal(4, new RandomLookAroundGoal(this));
         goalSelector.addGoal(5, new InfectedPanicGoal(this, 1.5D));
         goalSelector.addGoal(6, new FloatDiveGoal(this));
@@ -144,18 +200,167 @@ public class Scavenger extends InfectedHuman {
     }
 
     /**
-     * 存活了多少 tick。拾荒收益的加成、以及一次能治疗的同伴数量，都按它爬升。
+     * 远离玩家也不消失。
      *
-     * <p>用 {@code tickCount} 而不是自己再记一个字段：它就是"这只实体活了多久"，
-     * 而且不需要存盘——重启之后从 0 重算，对一只生物来说是合理的（它本来就被重新放进了世界）。
+     * <h2>为什么光拦 Spore 的 Despawning System 不够</h2>
+     * 「消失」其实有<b>两套</b>，{@code ScavengerDespawnProtectionMixin} 只挡住了其中一套：
+     * <ol>
+     *   <li>Spore 自己的 Despawning System（{@code cleanUpMobs} 按上限+黑名单清理）——靠那个 mixin；</li>
+     *   <li><b>原版</b>的「走远就消失」（{@code Mob#checkDespawn} → {@code removeWhenFarAway}）——这里。</li>
+     * </ol>
+     * Spore 的 {@code Infected} 也覆写了 {@code removeWhenFarAway}，但它的判据是
+     * {@code getEvoPoints()}（攒够 {@code min_kills} 才算"够格留下"），最后仍会落回原版默认值。
+     * 而拾荒者<b>永远攒不到进化点</b>——它不参战（没有攻击目标）、进化也被掐掉了
+     * （见 {@link #tickEvolution}），于是它会一直停在"不够格"那一档上，
+     * 玩家一走远就被原版清掉。这与需求正相反：它的全部价值都建立在活得久上。
+     *
+     * <p>所以这里直接返回 false，与 Spore 给 {@code Womb} 的处理一致（那个也关掉了这一条）。
+     *
+     * <p><b>不必担心数量失控</b>：转变要同时过两道闸门——基础概率（附近掉落物 0 件 10%、
+     * 32 件 50%）与数量系数 {@code max(0, 1 - 现存/上限)}（上限默认 20，到上限时概率正好归零，
+     * 见 {@code ScavengerPopulation}）。所以"不会自己消失"不会变成"满地都是"。
+     *
+     * <p><b>最终会有几只由上限决定，不由基础概率决定</b>：那个系数在现存 = 上限时正好是 0，
+     * 所以数量朝上限收敛；基础概率只影响收敛的快慢。想改"最终几只"就改
+     * {@code scavenger.maxCount}。
+     *
+     * <p><b>和平难度是刻意的例外。</b>{@code Mob#checkDespawn()} 的第一条分支是
+     * 「难度为和平 <b>且</b> {@code shouldDespawnInPeaceful()}」→ 直接删掉。
+     * {@code Infected} 继承的是 {@code net.minecraft.world.entity.monster.Monster}
+     * （已用 class 文件的 super_class 核实），那个类把该判据覆写成 {@code true}，
+     * 所以<b>这里不覆写它</b>——拾荒者与其它真菌一样，在和平难度下正常消失。
+     *
+     * <p>这与 Spore 自己的设定一致：{@code Infected.checkMonsterInfectedRules} 里
+     * 出生条件的第一句就是「难度是和平就返回 false」，也就是和平难度下真菌根本不刷。
+     * 留一只免疫和平的拾荒者在这种世界里既没有同伙也没有意义，只显得不一致。
+     */
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return false;
+    }
+
+    /**
+     * 死的时候把身上存的资源掉出来。
+     *
+     * <h2>为什么要有这一段</h2>
+     * 存量存在实体自己的持久数据里，<b>随实体一起消失</b>。上限随存活时间能涨到几千，
+     * 满仓时死一次就是一大笔无声损失，而且玩家看不到任何反馈。掉成物品之后，
+     * 「打死一只囤了很久的拾荒者」才成为一个真正的收获。
+     *
+     * <h2>为什么是掉成物品，而不是转交给真菌</h2>
+     * 转交（比如塞进世界暂存等心智补发）会让<b>玩家杀死拾荒者等于把资源送给真菌</b>，
+     * 与激励机制正好相反。掉在地上谁都能捡，掠夺后勤才是奖励。
+     *
+     * <p>换算用「汇率 + 白名单」而不是回查掉落物转化表：存量是个抽象数字，
+     * 反查需要遍历整张表做凑数找零，既慢又难解释，而玩家只关心打死它能捡到多少。
+     */
+    @Override
+    public void die(DamageSource source) {
+        dropStoredResources();
+        super.die(source);
+    }
+
+    /** 把存量按汇率换成物品掉在原地，然后清空。 */
+    private void dropStoredResources() {
+        if (level().isClientSide()) {
+            return;
+        }
+        double stored = CollectLootGoal.pendingResource(this);
+        // **先清空再掉**：万一掉落实体那一步出问题，也不会留下"读档后把同一笔再掉一次"的隐患
+        CollectLootGoal.setPendingResource(this, 0.0D);
+
+        int perItem = SporeAddFungusConfig.scavengerDeathDropResourcePerItem();
+        int limit = SporeAddFungusConfig.scavengerDeathDropMaxItems();
+        int count = Math.min(limit, Mth.floor(stored / perItem));
+        if (count <= 0) {
+            return;
+        }
+        List<Item> pool = deathDropPool();
+        if (pool.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < count; i++) {
+            // 随机取而不是轮转：表里有多项时不会一次全掉同一种
+            spawnAtLocation(new ItemStack(pool.get(getRandom().nextInt(pool.size()))));
+        }
+    }
+
+    /**
+     * 把配置里那张掉落物 id 表解析成物品。
+     *
+     * <p>写坏的条目<b>跳过并记一行日志</b>，而不是抛异常——沿用工程里那条约定：
+     * 配置是自由文本，一个拼错的 id 不该让一次死亡把服务器崩掉。
+     *
+     * <p>刻意不缓存：死亡是低频事件，而配置随时可能被改，缓存反而要处理失效。
+     */
+    private static List<Item> deathDropPool() {
+        List<Item> pool = new ArrayList<>();
+        for (String entry : SporeAddFungusConfig.scavengerDeathDropItems()) {
+            ResourceLocation id = ResourceLocation.tryParse(entry.trim());
+            if (id == null) {
+                LOGGER.warn("[SporeAdd] 拾荒者掉落表里这一条不是合法的 id，已跳过：{}", entry);
+                continue;
+            }
+            Item item = BuiltInRegistries.ITEM.get(id);
+            if (item == Items.AIR) {
+                LOGGER.warn("[SporeAdd] 拾荒者掉落表里这个物品不存在，已跳过：{}", id);
+                continue;
+            }
+            pool.add(item);
+        }
+        return pool;
+    }
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    /**
+     * 存活时长记在存盘数据里的键。
+     *
+     * <h2>为什么不能沿用实体的 {@code tickCount}</h2>
+     * 最初就是用它——{@code tickCount} 看上去正好是"这只实体活了多久"，还不必额外存盘。
+     * 但它<b>不写进存档</b>：玩家走远一次、区块卸载再加载，它就归零了。于是「活得越久越强」
+     * 实际退化成「<b>在玩家视野里连续活得越久</b>越强」——一只活了半小时的拾荒者
+     * 只要离开过视野一次，攒的成长就全没了，与需求的意思正好相反。
+     *
+     * <p>所以改成一个自己维护、随实体存盘的计数。这是这个类里唯一需要存盘的状态。
+     */
+    private static final String KEY_SURVIVAL = "spore_add:survival_ticks";
+
+    /** 存活了多少 tick。只在服务端累加，见 {@link #tick()}。 */
+    private int survivedTicks;
+
+    /**
+     * 存活了多少 tick。拾荒收益的加成、四条成长曲线、以及一次能治疗的同伴数量，都按它爬升。
+     *
+     * <p>只在服务端累加（见 {@link #tick}）：客户端那份不存盘，算了也没用，
+     * 两边各算各的还会让显示值与实际值漂移。
+     *
+     * <p>存盘之前就在世界里的拾荒者没有这个字段，会从 0 重新开始——不会出错，只是没有历史积累。
      */
     public int survivalTicks() {
-        return tickCount;
+        return survivedTicks;
     }
 
     /** 存活了多少分钟。 */
     public double survivalMinutes() {
         return survivalTicks() / 1200.0D;
+    }
+
+    /**
+     * 存档。**必须调 {@code super}**：Spore 的 {@code Infected} 也覆写了这一对方法
+     * （饥饿、是否与心智链接等都在那里存），漏掉 super 会让那些状态一起丢失。
+     */
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putInt(KEY_SURVIVAL, survivedTicks);
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        // 夹到 0 以上：存档被改坏时也不该让成长曲线变成负数
+        survivedTicks = Math.max(0, tag.getInt(KEY_SURVIVAL));
     }
 
     // ------------------------------------------------------------------
@@ -178,8 +383,8 @@ public class Scavenger extends InfectedHuman {
      * <p>为什么需要它：{@code heal()} 只收整数，而「每秒 0.5 点」这种速率直接取整就是 0
      * ——永远回不了血。攒够 1 点再回，速率才是准的。
      *
-     * <p>不存盘：它和 {@code survivalTicks} 一样是"活着的时候才有意义"的临时量，
-     * 重启后从 0 重算没有副作用。
+     * <p>不存盘：它只是"这一秒攒了多少零头"，重启后从 0 重算没有任何副作用
+     * （与 {@code survivedTicks} 不同，那个是成长曲线的基准，必须存盘）。
      */
     private double regenBuffer;
 
@@ -195,10 +400,19 @@ public class Scavenger extends InfectedHuman {
         if (level().isClientSide) {
             return;
         }
+        // 存活时长是成长曲线的基准，也是唯一存盘的状态
+        survivedTicks++;
         if (tickCount % 20 == 0) {
             refreshGrowth();
         }
+        // 链接名单的校验与补员。间隔由配置给（默认 5 秒）——同伴是缓慢移动的生物，
+        // 而这是这一段唯一的成本（一次实体盒扫描），不该每 tick 做。
+        // 用 survivedTicks 而不是 tickCount：后者读档后会从头计，与"多久重建一次"无关。
+        if (survivedTicks % SporeAddFungusConfig.scavengerLinkScanIntervalTicks() == 0) {
+            ScavengerLinks.refresh(this);
+        }
         applyRegeneration();
+        playMoveCue();
     }
 
     /** 按当前存活时长重算三条属性加成。 */
@@ -232,8 +446,49 @@ public class Scavenger extends InfectedHuman {
         double bonus = Math.min(max, minutes * perMinute);
         if (bonus > 0.0D) {
             instance.addPermanentModifier(
-                    new AttributeModifier(id, name, bonus, AttributeModifier.Operation.ADDITION));
+                    new AttributeModifier(id, name, round1(bonus), AttributeModifier.Operation.ADDITION));
         }
+    }
+
+    /**
+     * 只保留 1 位小数。
+     *
+     * <p>{@code 分钟数 × 每分钟} 算出来是 {@code 14.600000000000001} 这种样子，
+     * 它会原样出现在属性面板上（附魔/药水的 tooltip 那一栏会带一串小数）。
+     * 每一条数值本身没什么精度意义——成长曲线是"活得越久越高"，
+     * 差万分之一没人看得出来，但那一串小数很显眼。
+     *
+     * <p>注意它只作用于<b>我们加的修饰符</b>，不动 Spore 给的基础值，
+     * 也不动其它模组加的修饰符。
+     */
+    private static double round1(double value) {
+        return Math.round(value * 10.0D) / 10.0D;
+    }
+
+    /** 上一次播「移动」提示音的游戏刻。{@code Long.MIN_VALUE} 表示还没播过。 */
+    private long lastMoveCueTick = Long.MIN_VALUE;
+
+    /**
+     * 走动时偶尔响一声，让字幕提示「附近有拾荒者在活动」。
+     *
+     * <p>用「这一 tick 实际挪了多远」判断在不在走：比去读行走动画的状态更直接，
+     * 也不依赖任何动画字段的名字。站着不动时位移恰好是 0。
+     *
+     * <p><b>必须带冷却</b>，否则行走会每 tick 触发一次、字幕直接被刷屏
+     * （间隔见 {@code scavenger.moveCueCooldownSeconds}，默认 8 秒）。
+     */
+    private void playMoveCue() {
+        double dx = getX() - xOld;
+        double dz = getZ() - zOld;
+        if (dx * dx + dz * dz < 1.0E-6D) {
+            return;   // 这一 tick 几乎没动
+        }
+        long now = level().getGameTime();
+        if (now - lastMoveCueTick < SporeAddFungusConfig.scavengerMoveCueCooldownTicks()) {
+            return;
+        }
+        lastMoveCueTick = now;
+        playSound(ModSounds.SCAVENGER_STEP.get());
     }
 
     /**

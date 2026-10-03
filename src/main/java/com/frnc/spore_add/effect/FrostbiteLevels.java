@@ -1,5 +1,6 @@
 package com.frnc.spore_add.effect;
 
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.compat.SporeCompat;
 
 import net.minecraft.nbt.CompoundTag;
@@ -34,31 +35,23 @@ import net.minecraft.world.entity.LivingEntity;
  */
 public final class FrostbiteLevels {
 
-    /**
-     * 我们施加的冻伤持续时长：12 秒（240 tick）。
-     *
-     * <p>Spore 自己用的是 600 / 1200 tick，vanilla 在 amplifier 不降时会取更长的一方，
-     * 所以两边的时长不会互相削弱——泡在冷却液/液态寒冷里时被我们每秒刷新到 12 秒，
-     * 一旦离开就按这 12 秒自然倒数。
-     */
-    private static final int DURATION_TICKS = 240;
-
-    /** 两次涨级之间至少间隔的 tick 数。 */
-    private static final int MIN_INTERVAL_TICKS = 20;
+    // 时长、涨层间隔、以及伤害公式里的两个系数都来自配置的 frostbite 段——
+    // **四种冰霜来源（冷却液 / 液态寒冷 / 冰霜新星 / 冰雪的叹息）共用同一组值**。
+    // 每一项都在用到的那一刻才读（见 SporeAddPlayerConfig 的类注释），不做成静态常量：
+    // 静态常量会在类初始化时定死，改配置就得重启。
 
     /** 无上限来源（液态寒冷）用的 cap：实际仍受 {@link #MAX_AMPLIFIER} 约束。 */
     public static final int UNLIMITED = Integer.MAX_VALUE;
 
-    /** amplifier 的硬上限：超过 127 会在网络同步与存档时静默损坏，这里留一格余量。 */
+    /**
+     * amplifier 的硬上限：超过 127 会在网络同步与存档时静默损坏，这里留一格余量。
+     *
+     * <p><b>这是协议硬限，不是没做成可配置</b>：层数 = amplifier + 1，而 amplifier 的同步与序列化
+     * 都是 signed byte，所以「层数 127」之外的值根本传不出去。
+     */
     private static final int MAX_AMPLIFIER = 126;
 
     private static final String KEY_LAST_BUMP = "spore_add:frostbite_bump";
-
-    /** 冻伤每满 10 层，附加的最大生命值百分比。 */
-    private static final float BONUS_MAX_HEALTH_PER_TEN_LEVELS = 0.02F;
-
-    /** 每多少层算一档。 */
-    private static final int LEVELS_PER_BONUS_TIER = 10;
 
     private FrostbiteLevels() {
     }
@@ -66,7 +59,8 @@ public final class FrostbiteLevels {
     /**
      * 在冻伤上叠一层，并刷新持续时间。
      *
-     * @param cap 该来源允许的最大层数（例如冷却液是 10，液态寒冷用 {@link #UNLIMITED}）。
+     * @param cap 该来源允许的最大层数（例如冷却液用 {@code coolant.frostbiteCap}，默认 10；
+     *            液态寒冷用 {@link #UNLIMITED}）。
      *            <b>封顶只作用于"涨"</b>：若现有层数已经到顶，就不再加，但也<b>不会压低</b>——
      *            从液态寒冷（可能几十层）走进冷却液时，层数原样保留
      */
@@ -91,7 +85,7 @@ public final class FrostbiteLevels {
         // 症状就是"重进游戏后冻伤不触发，玩一阵忽然好了"。
         boolean stale = recorded && lastBump > entity.tickCount;
         boolean due = stale || !recorded
-                || entity.tickCount - lastBump >= MIN_INTERVAL_TICKS;
+                || entity.tickCount - lastBump >= SporeAddPlayerConfig.frostbiteMinIntervalTicks();
 
         int next = current;
         if (due) {
@@ -106,7 +100,7 @@ public final class FrostbiteLevels {
             return;
         }
         // amplifier 相同时 vanilla 会取更长的时长，所以逐秒调用就是"叠加并刷新"
-        entity.addEffect(new MobEffectInstance(frostbite, DURATION_TICKS, next));
+        entity.addEffect(new MobEffectInstance(frostbite, SporeAddPlayerConfig.frostbiteDurationTicks(), next));
     }
 
     /**
@@ -126,7 +120,8 @@ public final class FrostbiteLevels {
      * @param amplifier 冻伤当前的 amplifier，无该 buff 时传 0
      */
     public static float bonusFreezeDamage(LivingEntity entity, int amplifier) {
-        int tiers = (amplifier + 1) / LEVELS_PER_BONUS_TIER;
-        return tiers <= 0 ? 0.0F : tiers * BONUS_MAX_HEALTH_PER_TEN_LEVELS * entity.getMaxHealth();
+        int tiers = (amplifier + 1) / SporeAddPlayerConfig.frostbiteLevelsPerBonusTier();
+        return tiers <= 0 ? 0.0F
+                : tiers * (float) SporeAddPlayerConfig.frostbiteMaxHealthBonusPerTenLevels() * entity.getMaxHealth();
     }
 }

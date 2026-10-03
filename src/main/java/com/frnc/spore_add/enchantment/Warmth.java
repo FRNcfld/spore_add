@@ -1,5 +1,7 @@
 package com.frnc.spore_add.enchantment;
 
+import com.frnc.spore_add.SporeAddPlayerConfig;
+
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -46,11 +48,12 @@ public final class Warmth {
     }
 
     // ------------------------------------------------------------------
-    // 冻伤抗性：每件 25%
+    // 冻伤抗性：每件一个比例（默认 25%，四件叠满即全免）
     // ------------------------------------------------------------------
-
-    /** 每件「烈阳」提供的免疫比例。四件叠满刚好 100%。 */
-    private static final float RESISTANCE_PER_PIECE = 0.25F;
+    //
+    // 比例来自配置 warmth.frostbiteImmunityPerPiece，**在方法里读**而不是做成静态常量：
+    // 静态常量会在类初始化时定死，改配置就得重启。它会被客户端读到（canFreeze / addEffect
+    // 在双端都会跑），而玩家侧配置是 COMMON、双端各有一份，所以两边拿到的是同一个值。
 
     /**
      * 这个生物靠「烈阳」能免疫掉<b>多大比例</b>的冻伤效果：每件 25%，上限 1.0。
@@ -71,7 +74,7 @@ public final class Warmth {
                 pieces++;
             }
         }
-        return Math.min(1.0F, pieces * RESISTANCE_PER_PIECE);
+        return Math.min(1.0F, pieces * (float) SporeAddPlayerConfig.warmthFrostbiteImmunityPerPiece());
     }
 
     /**

@@ -2,7 +2,9 @@ package com.frnc.spore_add.scavenger;
 
 import com.Harbinger.Spore.Sentities.BaseEntities.Infected;
 import com.Harbinger.Spore.Sentities.BasicInfected.InfectedHuman;
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddFungusConfig;
+import com.frnc.spore_add.debug.SporeAddDebug;
 import com.frnc.spore_add.entity.ModEntities;
 import com.mojang.logging.LogUtils;
 
@@ -56,10 +58,25 @@ public final class ScavengerSpawn {
             return false;
         }
         // 需求 3：现存拾荒者越多，转换概率越低；到上限时系数正好为 0
-        double chance = transformChance(level, human.position()) * ScavengerPopulation.transformFactor();
-        if (chance <= 0.0D || human.getRandom().nextDouble() >= chance) {
+        double base = transformChance(level, human.position());
+        double factor = ScavengerPopulation.transformFactor();
+        double chance = base * factor;
+        // 「一只拾荒者都不出」有两个完全不同的原因，必须分得开：
+        // 系数归零（现存已到上限）与"概率太低、这次没掷中"。
+        // 本方法只在实体生成时跑，不热，所以直接 log()。
+        if (chance <= 0.0D) {
+            SporeAddDebug.log(Area.SCAVENGER, "拾荒者转变：系数为 0（基础概率 {} × 数量系数 {}），不转变",
+                    base, factor);
             return false;
         }
+        double roll = human.getRandom().nextDouble();
+        if (roll >= chance) {
+            SporeAddDebug.log(Area.SCAVENGER, "拾荒者转变掷骰：基础 {} × 系数 {} = 概率 {}，掷出 {} → 不转变",
+                    base, factor, chance, roll);
+            return false;
+        }
+        SporeAddDebug.log(Area.SCAVENGER, "拾荒者转变掷骰：基础 {} × 系数 {} = 概率 {}，掷出 {} → 转变",
+                base, factor, chance, roll);
 
         // 推到下一拍再动世界，理由见类注释
         level.getServer().execute(() -> transform(level, human));

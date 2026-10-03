@@ -2,7 +2,9 @@
 
 面向 Minecraft **1.20.1 / Forge** 的模组：围绕 [Fungal Infection: Spore](https://modrinth.com/mod/fungal-infectionspore)（真菌感染：孢子）的真菌机制做修改与新增。
 
-> 当前状态：**已有五块内容可用**——三种流体、两条 buff 链（可燃→爆燃 / 冻伤）、一件可蓄力投掷的物品（「冰霜新星」）、一颗核弹方块（「冰雪的叹息」，含冰封掉落物 / 蘑菇云 / 降雪与冰雾）、一个附魔与两个进度；尚未实机验证。
+> 当前状态：**内容已成型**——三种流体、两条 buff 链（可燃→爆燃 / 冻伤）、一件可蓄力投掷的物品（「冰霜新星」）、一颗核弹方块（「冰雪的叹息」）、一套恨意值系统与由它驱动的真菌袭击、心智存储、灾厄重构体加强、拾荒者、两个供整合包当配方锚点的占位条目，以及一个附魔与两个进度。
+> 数值与公式见 [`docs/values-and-formulas.md`](src/main/resources/docs/values-and-formulas.md)。
+> **大量改动尚未实机验证**，详见文末的验证状态。
 
 ## 已实现内容
 
@@ -102,6 +104,14 @@
     范围**跟着 2 号环的环半径长**——环推到哪、雾铺到哪，环推完后停在满半径。**雾里的生物被持续施加冻伤**，
     等级与时长就是 2 号环用的那一组（`frostbiteLevel` / `frostbiteMinutes`），
     所以后走进雾里的生物也会中招。
+  - **雾里每隔一段时间还会从中心推出一道可见的冲击波**：一道环由内向外扫过整个圆盘，
+    **扫到哪就把那一圈的真菌方块按 CDU 规则清掉**（与新星、与爆发本身同一套规则）。
+    环本身是沿地面撒的一圈粒子。默认一道推 **60 秒**、两道之间歇 **30 秒**，都可在
+    `mistClear.pulseSeconds` / `pulseIdleSeconds` 里改。
+
+    > 这是**改出来的**：原先的清理是"行主序游标"——空间上只在扫一条窄行带（玩家看不见），
+    > 而且整盘要 402 秒才走完一遍、雾只活 600 秒，**追不上真菌再生**，
+    > 观感上等于"这团雾根本不清菌"。换成按环推进后同一份工作量、但看得见且每处必然轮到。
   - 两者是**同一个实体**（`FrostSighAftermathEntity`）：它们都要把爆心那一个区块钉住，
     而区块票按「模组 + 所有者坐标 + 区块」去重——两个实体各钉一次只有一张票，
     谁先到期谁放掉，另一个就跟着停摆。合成一个实体，票就只有一张。
@@ -291,6 +301,15 @@
   <b>零冲突</b>，不会覆盖 Create 的任何东西。**
 - **标签是追加不是覆盖**：`blaze_burner_fuel/regular` 等文件都没有 `replace: true`，
   所以是往 Create 原有的燃料表里加 `spore:bile_vial`、`spore:gastric_biomass_block`。
+- **引用别的模组必须写 `{"id": "...", "required": false}`**：`raw_meat2`（农夫乐事）、
+  `raw_meat3`（Alex's Mobs）、`blaze_burner_fuel/special`（里面的 `create:blaze_cake`）都引用了
+  **不一定装**的模组。不写 `required: false` 的话，那个模组缺席时**整个标签加载失败**
+  （日志里一条 `Couldn't load tag ... missing following references` ERROR），
+  而不是安静地少几项。这与上面的 `conditions` 是同一个思路的两种写法：
+  配方用 `conditions`（整个文件跳过），标签用 `required: false`（单条跳过）。
+- **配方文件名只能是小写**：MC 的资源路径只允许 `[a-z0-9_./-]`。`PCI.json` 这种带大写的名字
+  会让**整个配方被静默丢弃**（日志只有一行 `Invalid path in pack: ..., ignoring`），
+  既不会崩也不会报错。同目录那 12 个文件就它一个大写，已经改成 `pci.json`。
 - **每个配方都带一条 `"conditions": [{"type": "forge:mod_loaded", "modid": "create"}]`**，
   所以没装 Create 的人**不会**在日志里看到一堆 `Unknown recipe type`
   （Forge 在 `RecipeManager` 里读顶层这个键，条件不满足就跳过，只记一行 debug）。
@@ -302,44 +321,66 @@
 > 改成了 `inqui:wastes`——并进来就等于要求玩家同时装 Inqui，没装的话 Spore 的生化塔会完全不生成。
 > 素材包仍在 `E:\文件\MC\modfix\1\有用\`。
 
-改动前建议先读这几处的注释，它们记录了不显然的约束：`SporeFluidType`（流体视野效果的契约）、`ModFluids`（为什么不入 `fluids/water` 标签）、`ColdEffects`（寒冷效果为什么必须由实体自己的 tick 施加）、`FrostNovaEntity`（为什么必须自己封一个寿命）、`FrostNovaCloudEntity`（为什么不用现成的 `AreaEffectCloud`）、`FrostMoteParticle`（粒子为什么必须覆写 `getRenderType`）、`SporeAddConfig`（配置值为什么不能放进静态字段）。
+**整合包配方锚点（两个占位条目）**
+
+| id | 类型 | 名字 | 行为 |
+|---|---|---|---|
+| `spore_add:frost_nova_0` | 物品 | 冰霜新星（半成品） | **无**。普通物品，可堆叠 64，右键无效 |
+| `spore_add:frost_sigh_0` | 方块 + 方块物品 | 冰雪的叹息（半成品） | **无**。普通方块，可堆叠 64，**铁镐起**才能挖下（掉落自身） |
+
+这两条是**给整合包当配方锚点**用的：整合包作者要在自己的数据包里写「由什么合成什么」，
+就需要一个有稳定 id、能在 JEI 里显示、能被标签引用的实体。所以它们刻意什么都不做——
+不是 `FrostNovaItem`（不能蓄力、右键无效），也没有 BlockEntity、没有状态属性、不参与任何事件。
+整合包怎么用它都不会与 mod 的玩法打架。
+
+**外观刻意与真货一模一样**：它们没有自己的贴图，模型直接套用成品的资源文件
+（`models/item/frost_nova_0.json` → `spore_add:item/frost_nova`；
+`models/item/frost_sigh_0.json` 与 `blockstates/frost_sigh_0.json` → `spore_add:block/frost_sigh`）。
+于是玩家一眼就知道这两件东西是同一族，**名字里那个「（半成品）」才是区分它们的地方**。
+
+**为什么要另开 id 而不是复用 `frost_nova` / `frost_sigh`**：行为完全不同，共用 id 就做不到
+"锚点是纯占位"这一条——新星只能堆 16、每次发射消耗 1 个；叹息不可堆叠、激活后挖不动、
+还会被自己的核爆保护起来。拿它们当配方材料既别扭、又容易被玩家误认为是真货。
+
+> 本 mod **自己不带任何配方**——`data/spore_add/` 下没有 `recipes/`。
+> 这两条与真货一样，只能在创造模式页签里拿到；「怎么合成」是整合包那边写的事。
+
+改动前建议先读这几处的注释，它们记录了不显然的约束：`SporeFluidType`（流体视野效果的契约）、`ModFluids`（为什么不入 `fluids/water` 标签）、`ColdEffects`（寒冷效果为什么必须由实体自己的 tick 施加）、`FrostNovaEntity`（为什么必须自己封一个寿命）、`FrostNovaCloudEntity`（为什么不用现成的 `AreaEffectCloud`）、`FrostMoteParticle`（粒子为什么必须覆写 `getRenderType`）、`SporeAddFungusConfig`（配置值为什么不能放进静态字段，以及「表走数据包、旋钮留配置」的分工）、`SporeAddDebug`（检查点的热路径纪律：变长参数在调用点求值，所以热的点必须先判 `on()`）。
 
 ## 配置
 
-首次启动会生成 `config/spore_add-common.toml`。为什么是 `COMMON` 而不是 `SERVER`，见 `SporeAddConfig` 的类注释。
+首次启动会生成**三份**配置。前两份按「谁受益」分开，第三份是调试用的：
 
-| 段 | 键 | 默认 | 含义 |
-|---|---|---|---|
-| `frostNova` | `blockRadius` | 4 | 满蓄力时换方块的球半径（1–16） |
-| | `entityRadius` | 10 | 满蓄力时施加冻伤的球半径（1–32） |
-| | `explosionPower` | 8.0 | 满蓄力时的爆炸强度，伤害与范围都随之变（原版 TNT 是 4.0，0–32） |
-| | `frostbiteSeconds` | 32 | 满蓄力时冻伤持续秒数 |
-| | `frostbiteLevel` | 10 | 满蓄力时的冻伤**显示层数**（= amplifier + 1，上限 127） |
-| | `minPowerFraction` | 0.20 | 最低蓄力时的威力系数 |
-| | `chargeTicks` / `minChargeTicks` | 100 / 20 | 拉满所需 tick / 低于它就不发射 |
-| | `speedPerTick` | 1.5 | 弹体飞行速度，**单位是格/tick**（1.5 ≈ 30 格/秒，0.1–10.0） |
-| | `autoDetonateSeconds` | 5 | 弹体未命中时的自动引爆秒数；1.5 格/tick × 5 秒 ≈ 150 格射程（1–60） |
-| | `secondaryDelaySeconds` | 30 | 冰球二次引爆的延时秒数（1–600） |
-| | `primaryCloudSeconds` | 10 | 一次爆炸霜雾的持续秒数（1–600） |
-| | `secondaryCloudSeconds` | 20 | 二次爆炸霜雾的持续秒数（1–600） |
-| | `secondaryRangeMultiplier` | 1.5 | 二次爆炸的**范围**倍率；只作用于冰雾与冻伤半径（1.0–4.0） |
-| | `secondaryPowerMultiplier` | 1.5 | 二次爆炸的**冻伤强度**倍率，层数与秒数一起乘（1.0–5.0） |
-| `liquidCold` | `radius` | 8 | 区域寒冷、冰扩散、冰不融化共用的半径（1–16）。上限 16 是冰扩散的取样密度决定的，见该键的注释 |
-| `frostSigh` | `radius` | 128 | 影响半径（圆形，不是球；1–256） |
-| | `shockwaveSeconds` | 20 | 冲击环扩散时长——**最要紧的性能旋钮**，调小会卡服（1–300） |
-| | `countdownSeconds` | 60 | 激活后到爆发（1–600） |
-| | `forceLoadChunks` | true | 倒计时期间是否强制加载圆盘内的区块 |
-| | `frozenSeconds` | 10 | 玩家被冲击环冰封的秒数（0 = 不冰封） |
-| | `frostbiteLevel` | 100 | 冲击环施加的冻伤显示层数（1–127） |
-| | `frostbiteMinutes` | 10 | 该冻伤的持续分钟（1–60） |
-| | `snowMinutes` | 10 | 降雪持续分钟（1–60） |
-| | `mistMinutes` | 10 | 冰雾持续分钟（1–60）。雾里的冻伤用的就是上面那组 `frostbiteLevel` / `frostbiteMinutes` |
-| | `coldBiome` | `minecraft:snowy_plains` | 爆发后改成的寒带生物群系 |
-| | `mushroomSeconds` | 45 | 蘑菇云持续秒数（1–600） |
-| | `secondRingDelaySeconds` | 2 | 2 号环（效果环）比 1 号环（击杀环）晚多少秒起跑（0–60） |
-| | `freezeItems` | true | 是否把掉落物封进冰壳 |
-| | `freezeMaxEntities` | 512 | 单次爆发最多冰封多少个掉落物（0–4096） |
-| | `iceMeltSeconds` | 0 | 冰壳多少秒后自动融化掉出物品；**0 = 永不**，只能敲碎（0–86400） |
+| 文件 | 管什么 |
+|---|---|
+| `config/spore_add-player-common.toml` | 让玩家更强、更好用的东西：冰霜武器、可燃/爆燃、恨意值给玩家的增益 |
+| `config/spore_add-fungus-common.toml` | 让真菌更强的东西：真菌加强、灾厄重构体、拾荒者、恨意值系统、真菌袭击、心智存储、资源 |
+| `config/spore_add-debug-common.toml` | **调试检查点**，默认全关。打开后袭击 / 心智存储 / 拾荒者 / 重构体这些子系统会打决策日志 |
+
+为什么是三份、为什么文件名是手写的（Forge 默认命名会让三个 `COMMON` 撞名崩游戏）、
+以及「哪些数值进配置、哪些进数据包」，见三个配置类的类注释。
+
+**调试检查点**是一个总闸加九个分组（`fungus` / `womb` / `scavenger` / `hatred` / `raid` /
+`hivemind` / `loot` / `cold` / `mixin`）。**总闸关着时分组一律不生效**——所以不改配置时
+日志输出与没有这套设施时逐行一致。每行都带 `[SporeAdd][分组]` 前缀，可以单独过滤：
+
+```bash
+grep "\[SporeAdd\]\[RAID\]" logs/latest.log   # 只看真菌袭击
+```
+
+不必改文件重启，游戏里就能开关（需要权限等级 2，改动会**写回配置文件**）：
+
+```
+/spore_add debug                 # 看总闸与九个分组的当前状态
+/spore_add debug on|off          # 总闸
+/spore_add debug <分组> on|off   # 单个分组，例如 /spore_add debug raid on
+```
+
+**每个键的默认值、取值范围，以及全部计算公式与数据包名单格式，
+见随 jar 分发的 [`docs/values-and-formulas.md`](src/main/resources/docs/values-and-formulas.md)。**
+
+> 那份文档里的键名与默认值是从配置定义直接导出的。这份 README 不再重复列一遍——
+> 两处各写一份的话，改了配置却忘了改 README 只是时间问题。
 
 ## 环境要求
 
@@ -355,33 +396,44 @@
 ## 目录结构
 
 ```
-src/main/java/com/frnc/spore_add/               （67 个类）
-├── SporeAdd.java        # 主入口（@Mod）：登记各注册表、注册配置与进度判据
-├── SporeAddConfig.java  # 配置：frostNova / frostSigh / liquidCold 三段，每段一个嵌套类
-├── fluid/ (4)           # 三种流体的 FluidType 与静置/流动变体，以及岩浆接触表
-├── block/ (7)           # 三种流体方块 + 「冰雪的叹息」方块及其 BlockEntity、方块实体注册表
-├── item/ (5)            # 三个桶 + 冰霜新星 + 冰雪的叹息 + 本 mod 的创造模式页签
-├── entity/ (8)          # 两个爆炸的弹体 / 粒子云 / 延时炸弹 / 冲击环 / 蘑菇云 / 爆后残留 / 冰壳，及其注册表
-├── particle/ (1)        # 11 个粒子类型的注册表
-├── effect/ (6)          # 可燃/爆燃/冻伤的等级记账与伤害算式
-├── enchantment/ (3)     # 「烈阳」附魔与其"算不算数"的唯一判定点
-├── advancement/ (2)     # 自定义进度判据（装上烈阳）
-├── event/ (1)           # Forge 事件处理
-├── network/ (2)         # 等级同步包（服务端 → 客户端显示）
-├── sound/ (1)           # 声音事件注册表（只借原版音频、自带字幕）
-├── client/ (7)          # 客户端：等级缓存与显示、流体滤镜与雾、两个实体渲染器、客户端入口
-│   └── particle/ (1)    # 客户端：全部粒子的渲染实现（共用一个类，只是参数不同）
-├── compat/ (1)          # Spore 的唯一引用点
-├── world/ (6)           # 世界改写：两个爆炸的落点逻辑、CDU 清真菌、受保护方块名单、区块票
-└── mixin/ (10)          # 对应 spore_add.mixins.json 的 package
+src/main/java/com/frnc/spore_add/               （122 个类）
+├── SporeAdd.java          # 主入口（@Mod）：登记各注册表、注册三份配置与进度判据
+├── SporeAddPlayerConfig.java  # 玩家侧配置（spore_add-player-common.toml）
+├── SporeAddFungusConfig.java  # 真菌侧配置（spore_add-fungus-common.toml）
+├── SporeAddDebugConfig.java   # 调试检查点配置（spore_add-debug-common.toml，默认全关）
+├── fluid/ (4)             # 三种流体的 FluidType 与静置/流动变体，以及岩浆接触表
+├── block/ (7)             # 三种流体方块 + 「冰雪的叹息」方块及其 BlockEntity、方块实体注册表
+├── item/ (5)              # 三个桶 + 冰霜新星 + 冰雪的叹息 + 本 mod 的创造模式页签
+├── entity/ (8)            # 两个爆炸的弹体 / 粒子云 / 延时炸弹 / 冲击环 / 蘑菇云 / 爆后残留 / 冰壳，及其注册表
+├── particle/ (1)          # 11 个粒子类型的注册表
+├── effect/ (6)            # 可燃/爆燃/冻伤的等级记账与伤害算式
+├── enchantment/ (3)       # 「烈阳」附魔与其"算不算数"的唯一判定点
+├── advancement/ (2)       # 自定义进度判据（装上烈阳）
+├── event/ (1)             # Forge 事件处理
+├── network/ (2)           # 等级同步包（服务端 → 客户端显示）
+├── sound/ (1)             # 声音事件注册表（只借现成音频、自带字幕）
+├── hatred/ (5)            # 恨意值：存档数据、取值表、唯一改值入口、事件、给玩家的增益
+├── raid/ (3)              # 真菌袭击：阶段机状态、调度中心、维度黑名单读取
+├── hivemind/ (4)          # 心智存储、穹顶被砸时的漏出，以及清扫世界
+├── scavenger/ (10)         # 拾荒者实体、逃跑/拾荒目标、交付链、生成转变、数量上限
+├── fungus/ (11)           # 真菌加强：进化/猎杀/感知/抗寒，以及资源收集、灾厄重构体孵化
+├── command/ (3)           # /spore_add 命令：唯一根节点 + hatred 与 debug 两棵子树
+├── compat/ (1)            # Spore 的唯一引用点
+├── debug/ (1)             # 检查点的统一出口（分组枚举、共享 logger、日志前缀）
+├── world/ (8)             # 世界改写：两个爆炸的落点逻辑、CDU 清真菌、受保护方块名单、区块票、冰雾清理
+├── client/ (8)            # 客户端：等级缓存与显示、流体滤镜与雾、实体渲染器、客户端入口
+│   └── particle/ (1)      # 客户端：全部粒子的渲染实现（共用一个类，只是参数不同）
+└── mixin/ (23)            # 对应 spore_add.mixins.json 的 package
 src/main/resources/
 ├── META-INF/mods.toml                # 模组元数据（modId/版本/作者/依赖）
 ├── META-INF/THIRD-PARTY-NOTICES.txt  # 第三方粒子贴图的署名与 MIT 全文
 ├── pack.mcmeta                       # 资源包描述
-├── spore_add.mixins.json             # mixin 配置（通用 7 个 + 客户端 3 个）
+├── spore_add.mixins.json             # mixin 配置（通用 20 个 + 客户端 3 个）
+├── docs/values-and-formulas.md       # 数值与公式说明（随 jar 分发）
 ├── assets/spore_add/                 # 贴图、模型、方块状态、粒子定义、语言文件
-├── data/spore_add/                   # 两个进度、方块掉落表、frost_proof 受保护方块标签
-├── data/minecraft/                   # 只放方块标签：把 frost_sigh 挂进 mineable/pickaxe 与 needs_diamond_tool
+├── data/spore_add/                   # 进度、方块掉落表、受保护方块/真菌食物标签、loot_values 与 raid_blacklist
+├── data/minecraft/                   # 只放方块标签：两个方块各自的 mineable/pickaxe 与 needs_*_tool
+├── data/spore/                       # 往 Spore 的真菌阵营标签里加拾荒者
 └── data/create/                      # Create 联动（见上「Create 联动」一节）
 ```
 
@@ -401,11 +453,19 @@ src/main/resources/
 
 ## 第三方素材
 
-| 素材 | 来源 | 许可 |
-|---|---|---|
-| `textures/particle/frost_mist.png`、`frost_snowflake.png`、`frost_shard.png` | [Iron-Elden-Ring-Particle-library](https://github.com/shuimo0413/Iron-Elden-Ring-Particle-library)（「Iron 的法术与魔法书：艾尔登法环」粒子库） | MIT，© 2026 shuimo0413 |
+`textures/particle/` 下的**全部 11 张**粒子贴图都来自第三方素材库
+[Iron-Elden-Ring-Particle-library](https://github.com/shuimo0413/Iron-Elden-Ring-Particle-library)
+（「Iron 的法术与魔法书：艾尔登法环」粒子库），许可为 MIT，© 2026 shuimo0413：
 
-按 MIT 的要求，版权与许可声明随这三张图一起放在 jar 内，见上表提到的 `THIRD-PARTY-NOTICES.txt`。
+| 用在哪 | 文件 |
+|---|---|
+| 冰霜新星 | `frost_mist.png`、`frost_snowflake.png`、`frost_shard.png` |
+| 冰雪的叹息 | `frost_sigh_cloud.png`、`frost_sigh_haze.png`、`frost_sigh_core.png`、`frost_sigh_flare.png`、`frost_sigh_snow.png`、`frost_sigh_warning.png` |
+| 上面两张的**派生作品** | `frost_sigh_mist.png`、`frost_sigh_flake.png`（只改颜色，形状与透明通道逐像素未动） |
+
+按 MIT 的要求，版权与许可声明（含每张图的素材原名、以及两张派生图改了什么的说明）随这些图一起
+放在 jar 内，见 `META-INF/THIRD-PARTY-NOTICES.txt`。**那份通知文件才是权威名单**，
+上面这张表只是为了在 README 里能一眼看出"哪些图不是原创的"。
 
 ## 构建
 
@@ -438,8 +498,9 @@ src/main/resources/
 - **命名空间**：一切注册内容都挂在 `spore_add` 下，Java 里用 `SporeAdd.id("xxx")` 生成 `ResourceLocation`。
 - **注册内容**：每个功能子包（`fluid` / `block` / `item` / `effect` / `enchantment`）自己持有 `DeferredRegister` 并提供一个 `register(IEventBus)`，由 `SporeAdd` 的构造函数逐个调用。
 - **事件**：`MinecraftForge.EVENT_BUS.register(this)` 已在主类里接好，直接加 `@SubscribeEvent` 方法即可。
-- **配置**：`SporeAddConfig` 用 `ForgeConfigSpec`（`COMMON` 类型），生成 `config/spore_add-common.toml`。新增可调项加在那里，并且**取值只放在访问器的方法体里**，不要写成 `static final` 字段——配置的加载时机晚于方块/物品的构造。另外注意 `gradle.properties` 被 Gradle 以 ISO-8859-1 读取，中文别放那里（配置的注释写在 Java 源码里，没这个问题）。
-- **mixin**：MixinGradle 管线（含 refmap 与开发环境 `mixin.env.remapRefMap`）已接好，现有 10 个 mixin。新增时把类名登记进 `spore_add.mixins.json` 的 `"mixins"`（通用）或 `"client"`（仅客户端）列表——**漏登记的典型症状是"编译进 jar 但运行时不生效"**。客户端专用的混入必须放进 `client` 列表，否则服务端加载到只存在于客户端的类会直接崩。
+- **检查点**：给某个子系统加调试日志时用 `debug/SporeAddDebug`，不要自己 `LogUtils.getLogger()`——它带统一前缀 `[SporeAdd][分组]`，能单独过滤。**热的调用点（每 tick、每实体、高频委托器）必须先 `if (SporeAddDebug.on(Area.X))` 再打**：变长参数在调用点就求值了，只靠 `log()` 内部那一次判断挡不住参数的开销。判据与写法见那个类的类注释。
+- **配置**：三份 `ForgeConfigSpec`（都是 `COMMON` 类型），分别是 `SporeAddPlayerConfig`（`config/spore_add-player-common.toml`）、`SporeAddFungusConfig`（`config/spore_add-fungus-common.toml`）与 `SporeAddDebugConfig`（`config/spore_add-debug-common.toml`，默认全关的检查点）。**文件名必须显式给**——Forge 默认按 `modId-类型` 拼名，三个 `COMMON` 会撞名并把游戏崩掉。另外 `ConfigValue#get()` 在开发环境里配置未加载时会抛 `IllegalStateException`（生产环境才退回默认值），所以访问器不要在加载期被调到。新增可调项时记住三条：① **取值只放在访问器的方法体里**，不要写成 `static final` 字段（配置的加载时机晚于方块/物品的构造）；② 静态块里 `new` 的顺序、各内部 class 的声明顺序、访问器顺序三者必须一致，它就是 toml 的段落顺序；③ `.comment()` 里不能出现 ASCII 双引号（要写「」），且改完要同步更新 `docs/values-and-formulas.md`。另外注意 `gradle.properties` 被 Gradle 以 ISO-8859-1 读取，中文别放那里（配置的注释写在 Java 源码里，没这个问题）。
+- **mixin**：MixinGradle 管线（含 refmap 与开发环境 `mixin.env.remapRefMap`）已接好，现有 23 个 mixin。新增时把类名登记进 `spore_add.mixins.json` 的 `"mixins"`（通用 20 个）或 `"client"`（仅客户端 3 个）列表——**漏登记的典型症状是"编译进 jar 但运行时不生效"**。客户端专用的混入必须放进 `client` 列表，否则服务端加载到只存在于客户端的类会直接崩。
 - **Access Transformer**：需要公开原版私有成员时，在 `build.gradle` 里取消 `accessTransformer = file(...)` 的注释并新建 `src/main/resources/META-INF/accesstransformer.cfg`（保持纯 ASCII）。
 
 ## 许可证

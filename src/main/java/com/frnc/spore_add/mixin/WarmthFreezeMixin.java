@@ -1,5 +1,6 @@
 package com.frnc.spore_add.mixin;
 
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.enchantment.Warmth;
 
 import net.minecraft.world.entity.LivingEntity;
@@ -34,11 +35,12 @@ public abstract class WarmthFreezeMixin {
         }
     }
 
-    /** vanilla 每 tick 把冻结刻数减掉这么多（见 {@code aiStep} 里那个 {@code Math.max(0, i - 2)}）。 */
-    private static final int BASE_DECAY = 2;
-
-    /** 额外衰减的补发周期，见 {@link #sporeAdd$warmthSpeedsUpFrostMelt}。 */
-    private static final int EXTRA_DECAY_PERIOD = 2;
+    // 下面两个数都来自配置的 warmth 段（frostDecayPerTick / meltTopUpPeriodTicks），
+    // **在方法体内读、且读在 isClientSide 早退之后**：绝大多数实体每 tick 直接返回，
+    // 连配置都不碰，热路径不受影响。
+    //
+    // BASE_DECAY 必须与 vanilla 实际的每 tick 衰减量一致（原版硬编码 2）——它不改原版行为，
+    // 只改我们"补零头"时假设的基准，填错会让长期均值失真。
 
     /**
      * 「烈阳」让已经吃到的细雪效果<b>消失得更快</b>。
@@ -75,8 +77,9 @@ public abstract class WarmthFreezeMixin {
             self.setTicksFrozen(0);   // 满四件：立即消失
             return;
         }
-        if (self.tickCount % EXTRA_DECAY_PERIOD == 0) {
-            int extra = Math.round(BASE_DECAY * resistance * EXTRA_DECAY_PERIOD);
+        int period = SporeAddPlayerConfig.warmthMeltTopUpPeriodTicks();
+        if (self.tickCount % period == 0) {
+            int extra = Math.round(SporeAddPlayerConfig.warmthFrostDecayPerTick() * resistance * period);
             self.setTicksFrozen(Math.max(0, self.getTicksFrozen() - extra));
         }
     }

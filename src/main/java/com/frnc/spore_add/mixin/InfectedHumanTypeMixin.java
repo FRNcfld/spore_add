@@ -1,6 +1,8 @@
 package com.frnc.spore_add.mixin;
 
 import com.Harbinger.Spore.Sentities.BasicInfected.InfectedHuman;
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
+import com.frnc.spore_add.debug.SporeAddDebug;
 import com.frnc.spore_add.entity.ModEntities;
 import com.frnc.spore_add.scavenger.Scavenger;
 
@@ -74,6 +76,15 @@ public abstract class InfectedHumanTypeMixin {
                     target = "Lnet/minecraftforge/registries/RegistryObject;get()Ljava/lang/Object;"),
             remap = false)
     private static Object sporeAdd$useScavengerType(RegistryObject<?> original) {
-        return Scavenger.claimConstruction() ? ModEntities.SCAVENGER.get() : original.get();
+        // claimConstruction 有副作用（把标志取走），所以无论走哪条路都只能调这一次。
+        if (!Scavenger.claimConstruction()) {
+            // 普通菌染人类走 Spore 原路。这里**刻意不打日志**：
+            // 每次构造菌染人类都会进来一次，打了就是按生成量刷屏。
+            return original.get();
+        }
+        // 这一行是「拾荒者存盘后会不会退化成普通菌染人类」的答案。
+        // 它每次构造拾荒者都会打，所以读档后看不到它，就说明这个重定向没生效。
+        SporeAddDebug.log(Area.MIXIN, "构造重定向：写死的 spore:inf_human 已换成 spore_add:scavenger");
+        return ModEntities.SCAVENGER.get();
     }
 }

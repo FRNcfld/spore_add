@@ -8,7 +8,9 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 
 import com.frnc.spore_add.SporeAddFungusConfig;
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.compat.SporeCompat;
+import com.frnc.spore_add.debug.SporeAddDebug;
 import com.frnc.spore_add.fungus.FungusCombat;
 import com.frnc.spore_add.hatred.HatredManager;
 import com.Harbinger.Spore.Sentities.Organoids.Proto;
@@ -155,7 +157,7 @@ public final class RaidManager {
         if (!isAnyRaidActive() || amount <= 0) {
             return amount;
         }
-        double multiplier = SporeAddFungusConfig.raidResourceCostMultiplier();
+        double multiplier = SporeAddFungusConfig.raidPrepResourceCostMultiplier();
         return Math.max(1, (int) Math.round(amount * multiplier));
     }
 
@@ -164,7 +166,7 @@ public final class RaidManager {
         if (!isAnyRaidActive() || amount <= 0) {
             return amount;
         }
-        double multiplier = SporeAddFungusConfig.raidResourceGainMultiplier();
+        double multiplier = SporeAddFungusConfig.raidPrepResourceGainMultiplier();
         return Math.max(amount, (int) Math.round(amount * multiplier));
     }
 
@@ -211,7 +213,7 @@ public final class RaidManager {
         if (!SporeAddFungusConfig.wombRaidBonusesEnabled() || !isAnyRaidActive() || clock <= 1) {
             return clock;
         }
-        double multiplier = SporeAddFungusConfig.raidManufactureSpeedMultiplier();
+        double multiplier = SporeAddFungusConfig.raidAttackManufactureSpeedMultiplier();
         if (multiplier <= 1.0D) {
             return clock;
         }
@@ -229,7 +231,7 @@ public final class RaidManager {
         if (!SporeAddFungusConfig.wombRaidBonusesEnabled() || !isAnyRaidActive() || amount <= 0) {
             return amount;
         }
-        double multiplier = SporeAddFungusConfig.raidResourceGainMultiplier();
+        double multiplier = SporeAddFungusConfig.raidPrepResourceGainMultiplier();
         return Math.max(amount, (int) Math.round(amount * multiplier));
     }
 
@@ -243,7 +245,7 @@ public final class RaidManager {
         if (!isAnyRaidActive() || interval <= 1) {
             return interval;
         }
-        double multiplier = SporeAddFungusConfig.raidGrowthSpeedMultiplier();
+        double multiplier = SporeAddFungusConfig.raidPrepGrowthSpeedMultiplier();
         if (multiplier <= 1.0D) {
             return interval;
         }
@@ -261,7 +263,7 @@ public final class RaidManager {
         if (!isAnyRaidActive() || interval <= 1) {
             return interval;
         }
-        double multiplier = SporeAddFungusConfig.raidManufactureSpeedMultiplier();
+        double multiplier = SporeAddFungusConfig.raidAttackManufactureSpeedMultiplier();
         if (multiplier <= 1.0D) {
             return interval;
         }
@@ -273,7 +275,7 @@ public final class RaidManager {
         if (!isAnyAttackPhase() || cap <= 0) {
             return cap;
         }
-        double multiplier = SporeAddFungusConfig.raidDespawnCapMultiplier();
+        double multiplier = SporeAddFungusConfig.raidAttackDespawnCapMultiplier();
         return Math.max(cap, (int) Math.round(cap * multiplier));
     }
 
@@ -389,9 +391,9 @@ public final class RaidManager {
     /**
      * 准备阶段。
      *
-     * <p>发动要同时满足两件事：<b>至少熬过了 {@code prepSeconds}</b>（这段是给玩家的反应窗口，
+     * <p>发动要同时满足两件事：<b>至少熬过了 {@code raid.prep.seconds}</b>（这段是给玩家的反应窗口，
      * 也是台词之后"心智开始全力运转"能被感知到的那一段），以及<b>三项发动条件全满足</b>。
-     * 熬到 {@code prepMaxSeconds} 还没凑够就取消。
+     * 熬到 {@code raid.prep.maxSeconds} 还没凑够就取消。
      */
     private static boolean tickPrep(ServerPlayer player, FungalRaid raid) {
         if (raid.totalTicks() >= SporeAddFungusConfig.raidPrepTimeoutTicks()) {
@@ -414,6 +416,13 @@ public final class RaidManager {
 
         Assessment assessment = assess(player);
         if (!assessment.ready()) {
+            // 「袭击一直不发动」唯一能看到原因的地方：三个实测值与三个阈值一起打出来。
+            // 本行跑到这里时每 raid.launchCheckInterval 秒才一次，不算热路径，
+            // 所以直接调 log()（它自己会判开关），不加 on() 守卫。
+            SporeAddDebug.log(Area.RAID, "准备未达成：资源 {}/{}、数量 {}/{}、质量 {}/{}",
+                    assessment.biomass(), SporeAddFungusConfig.raidLaunchMinBiomass(),
+                    assessment.fungusCount(), SporeAddFungusConfig.raidLaunchMinFungusCount(),
+                    assessment.quality(), SporeAddFungusConfig.raidLaunchMinQuality());
             return false;
         }
         launchAttack(player, raid);
@@ -447,7 +456,12 @@ public final class RaidManager {
         double chance = Math.min(SporeAddFungusConfig.raidArenaChanceMax(),
                 SporeAddFungusConfig.raidArenaChanceBase()
                         + tier * SporeAddFungusConfig.raidArenaChancePerTier());
-        return player.getRandom().nextDouble() < chance;
+        double roll = player.getRandom().nextDouble();
+        // 没出竞技之须有两种成因——掷骰没中，或者建实体失败（见 launchAttack 那条 warn）。
+        // 这一行把前者与"档位/概率配错了"分开：每场袭击只跑一次，冷路径。
+        SporeAddDebug.log(Area.RAID, "竞技之须掷骰：档位 {}、概率 {}、掷出 {} → {}",
+                tier, chance, roll, roll < chance ? "出现" : "不出现");
+        return roll < chance;
     }
 
     /** 在玩家附近种一只竞技之须，并记下它供后续追踪。 */
@@ -468,7 +482,7 @@ public final class RaidManager {
      * <ul>
      *   <li><b>它自己缩回消失了</b>——那是 Spore 的结束判定（场上真菌少于 4 只），
      *       也就是玩家把它的波次清干净了。<b>这是通过</b>，于是进我方围剿波次继续打。</li>
-     *   <li><b>超时</b>（{@code arenaTimeoutSeconds}）——整整那段时间里场上真菌始终没被清干净，
+     *   <li><b>超时</b>（{@code raid.arena.timeoutSeconds}）——整整那段时间里场上真菌始终没被清干净，
      *       也就是玩家<b>没能通过</b>这段挑战。<b>这是失败</b>：整场袭击在此结束，
      *       按"玩家被真菌击杀"那条线结算——削他一大笔恨意值，并把损失换算成资源给所有心智。</li>
      * </ul>
@@ -540,19 +554,19 @@ public final class RaidManager {
      *
      * <h2>一波是怎么走的</h2>
      * <ol>
-     *   <li><b>开头</b>：传送一批真菌到玩家周围（数量由 {@code ownWaveCountBase} 与
-     *       {@code ownWaveCountPerWave} 按波次算，见 {@link SporeAddFungusConfig#raidOwnWaveCount}），
+     *   <li><b>开头</b>：传送一批真菌到玩家周围（数量由 {@code raid.ownWave.countBase} 与
+     *       {@code raid.ownWave.countPerWave} 按波次算，见 {@link SporeAddFungusConfig#raidOwnWaveCount}），
      *       并给全场真菌刷新参战增益——amplifier 随波数递增，即需求「波次越高，真菌越强」。</li>
-     *   <li><b>结束</b>：玩家周围 {@code ownWaveClearRadius} 内的真菌少于 {@code ownWaveClearCount} 只
+     *   <li><b>结束</b>：玩家周围 {@code raid.ownWave.clearRadius} 内的真菌少于 {@code raid.ownWave.clearCount} 只
      *       ——也就是需求里的「清完了」——就进下一波。</li>
-     *   <li><b>兜底</b>：{@code ownWaveSeconds} 到了还没清完也强行进下一波。
+     *   <li><b>兜底</b>：{@code raid.ownWave.seconds} 到了还没清完也强行进下一波。
      *       没有它，一波打不完的仗会让整场袭击永远停在这里。</li>
      * </ol>
      *
      * <h2>"每波无上限"靠什么兜住</h2>
      * 需求把每波数量改成了随波次增长的公式、取消了人为上限。真正的上限来自世界本身：
      * <ul>
-     *   <li>只传送<b>已经在世界里</b>的真菌（不凭空生成），所以 {@code teleportSearchRadius} 内
+     *   <li>只传送<b>已经在世界里</b>的真菌（不凭空生成），所以 {@code raid.attack.teleportSearchRadius} 内
      *       一共有多少可调，就是这一波的上限；</li>
      *   <li>那些真菌的总数本身又受 Spore 的 Despawn 上限约束——而那个上限在攻击期间被我们翻倍了。</li>
      * </ul>
@@ -593,7 +607,7 @@ public final class RaidManager {
     /**
      * 给我方围剿的奖励：按配置的战利品表在玩家附近掉落。
      *
-     * <p>掷骰次数 = 波数 × {@code ownLootRollsPerWave}，所以波数越多（= 恨意值越高）奖励越丰厚，
+     * <p>掷骰次数 = 波数 × {@code raid.ownLoot.rollsPerWave}，所以波数越多（= 恨意值越高）奖励越丰厚，
      * 正是需求要的「完成后奖励越丰厚」。
      *
      * <p>掉在玩家附近而不是脚下：脚下会和他自己捡的东西混成一堆，太远又找不到。
@@ -649,7 +663,7 @@ public final class RaidManager {
      *
      * <p>用"扫一遍附近的真菌"而不是"给每只新生成的上 buff"：这样竞技之须自己召出来的、
      * 以及我们传送过来的，走的是同一条路，不必去 hook Spore 的召唤流程。
-     * 扫的半径复用 {@code gatherRadius}。
+     * 扫的半径复用 {@code raid.prep.gatherRadius}。
      *
      * @param amplifierBonus 额外加到每个效果上的等级（波次越高越大）
      */
@@ -692,7 +706,7 @@ public final class RaidManager {
      * <p><b>资源</b>取所有心智里最高的那个，而不是总和或平均——发动袭击只需要"有一只心智准备好了"，
      * 不需要全阵营齐步走。
      *
-     * <p><b>数量与质量</b>都统计目标玩家周围 {@code gatherRadius} 内的真菌，
+     * <p><b>数量与质量</b>都统计目标玩家周围 {@code raid.prep.gatherRadius} 内的真菌，
      * 质量用的是恨意值那张等级表（{@link HatredValues#tierOf}），所以一只灾厄顶二十五只小兵。
      * 用同一个半径、同一次遍历把两个数一起算出来。
      */
@@ -811,7 +825,7 @@ public final class RaidManager {
         return nearest;
     }
 
-    /** 玩家周围 {@code ownWaveClearRadius} 内还有多少真菌。用于判断这一波清完了没有。 */
+    /** 玩家周围 {@code raid.ownWave.clearRadius} 内还有多少真菌。用于判断这一波清完了没有。 */
     private static int fungusNear(ServerPlayer player) {
         double radius = SporeAddFungusConfig.raidOwnWaveClearRadius();
         AABB area = player.getBoundingBox().inflate(radius);

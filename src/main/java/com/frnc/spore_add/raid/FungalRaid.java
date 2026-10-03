@@ -122,7 +122,7 @@ public final class FungalRaid {
      * 玩家不在战场上时推进一 tick：<b>只累计缺席时间，阶段计时停住</b>。
      *
      * <p>为什么阶段计时必须停住：不停的话，跑进下界的玩家会在几秒后被
-     * {@code arenaTimeoutSeconds} 判失败——那等于"躲一下就直接输"，
+     * {@code raid.arena.timeoutSeconds} 判失败——那等于"躲一下就直接输"，
      * 与需求给的"300 秒内回来就不算输"矛盾。冻结之后那 300 秒才是真正可用的窗口。
      */
     public void tickAway() {
@@ -219,7 +219,7 @@ public final class FungalRaid {
      * 把<b>当前阶段内</b>的计时归零，但不换阶段。
      *
      * <p>用于"同一阶段内的第 N 波"——波与波之间不是阶段切换，但每波各自要用满
-     * {@code ownWaveSeconds}，所以需要一个重置阶段计时、却不推进阶段的操作。
+     * {@code raid.ownWave.seconds}，所以需要一个重置阶段计时、却不推进阶段的操作。
      * 用 {@link #advanceTo(Phase)} 做不到这件事（它会拒绝同阶段的转换，那是有意的）。
      */
     public void restartPhaseTicks() {

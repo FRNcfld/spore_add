@@ -6,7 +6,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddPlayerConfig;
+import com.frnc.spore_add.debug.SporeAddDebug;
 import com.frnc.spore_add.enchantment.Warmth;
 import com.frnc.spore_add.particle.ModParticles;
 import com.frnc.spore_add.world.FrostSighBlast;
@@ -282,15 +284,24 @@ public class FrostSighShockwaveEntity extends Entity {
             if (!killRingSettledPlayers.add(player.getUUID())) {
                 continue;
             }
-            if (Warmth.resistanceFraction(player) >= 1.0F) {
+            // 抗性只算一次并留用：下面 destroyWarmthArmor 会把护甲卸掉，
+            // 之后再算就是 0 了，日志里那个数会变得没法解释。
+            float resistance = Warmth.resistanceFraction(player);
+            if (resistance >= 1.0F) {
                 // 挡住了——代价是那套护甲<b>当场</b>碎裂。
                 //
                 // ⚠️ 碎完之后**不再记任何东西**：2 号环读的是"此刻身上穿了什么"。
                 // 所以如果他能在 2 秒空档里再从背包掏一套穿上，2 号环的冻伤与冰封就会被那一套正常减免。
                 // 这是刻意的取舍（"烈阳正常生效"优先），代价是"备一套备用甲"能换来整场爆发的免疫。
                 Warmth.destroyWarmthArmor(player);
+                // 「这颗核弹为什么没杀死那个人」的答案就在这一行与下一行之间。
+                // 每个玩家每场爆发只判一次（上面 killRingSettledPlayers 挡着），不是逐 tick。
+                SporeAddDebug.log(Area.COLD, "核弹 1 号环：{} 整套「烈阳」挡住（抗性 {}），护甲当场碎裂",
+                        player.getGameProfile().getName(), resistance);
                 continue;
             }
+            SporeAddDebug.log(Area.COLD, "核弹 1 号环：{} 抗性 {} 不足 1.0，当场击杀",
+                    player.getGameProfile().getName(), resistance);
             player.kill();
         }
     }

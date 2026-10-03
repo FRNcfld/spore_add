@@ -2,6 +2,7 @@ package com.frnc.spore_add.block;
 
 import java.util.function.Supplier;
 
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.effect.ColdEffects;
 
 import net.minecraft.core.BlockPos;
@@ -14,7 +15,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 
 /**
- * 冷却液的流体方块：生物泡在里面会像陷在细雪里一样失温，并逐秒累积冻伤（<b>封顶 10 层</b>）。
+ * 冷却液的流体方块：生物泡在里面会像陷在细雪里一样失温，并逐秒累积冻伤
+ * （<b>封顶层数见配置 {@code coolant.frostbiteCap}，默认 10</b>）。
  *
  * <h2>"和处于细雪中一样"只靠一句</h2>
  * 原版 {@code PowderSnowBlock#entityInside} 里真正产生冻结的只有
@@ -28,8 +30,8 @@ import net.minecraft.world.level.material.FlowingFluid;
  */
 public class CoolantBlock extends LiquidBlock {
 
-    /** 冷却液能把冻伤推到的层数上限。只封顶"涨"，不会压低从液态寒冷带过来的更高层数。 */
-    private static final int FROSTBITE_CAP = 10;
+    // 层数上限来自配置（coolant.frostbiteCap）而不是这里的常量：它只封顶"涨"，
+    // 不会压低从液态寒冷带过来的更高层数。见 SporeAddPlayerConfig#coolantFrostbiteCap()。
 
     public CoolantBlock(Supplier<? extends FlowingFluid> fluid, BlockBehaviour.Properties properties) {
         super(fluid, properties);
@@ -46,7 +48,7 @@ public class CoolantBlock extends LiquidBlock {
             // 本回调每 tick 都进来、且生物泡在两格深时按方块数各进来一次，
             // "每秒至多一层"与"同 tick 去重"都在 FrostbiteLevels 里统一兜底。
             // 走 ColdEffects 是为了与液态寒冷用同一条路径（那里还要额外叠细雪标志）
-            ColdEffects.chill(living, FROSTBITE_CAP);
+            ColdEffects.chill(living, SporeAddPlayerConfig.coolantFrostbiteCap());
         }
     }
 }

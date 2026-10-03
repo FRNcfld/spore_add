@@ -23,7 +23,8 @@
     "ProtoStorageMixin",
     "WombMutationMixin",
     "WombRaidMixin",
-    "CalamityHatchMixin"
+    "WombAssimilationMixin",
+    "WombSummonMixin"
   ],
   "client": [
     "IgnitableEffectMixin",

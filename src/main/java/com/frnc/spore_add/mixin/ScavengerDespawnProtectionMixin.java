@@ -28,6 +28,20 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * 存活时长爬升），被系统清掉等于把它攒的一切归零。它的数量由本 mod 自己的
  * {@code scavenger.maxCount} 管（见 {@code ScavengerPopulation}），不靠 Spore 那套按等级分的上限。
  *
+ * <p><b>但这一个 mixin 只管了「消失」的一条路。</b>拾荒者刻意保留的免疫只有两条，另有一条刻意不免疫：
+ * <ol>
+ *   <li>Spore 自己的 Despawning System —— <b>本类</b>；</li>
+ *   <li>原版的「走远就消失」（{@code Mob#checkDespawn} → {@code removeWhenFarAway}）——
+ *       {@code Scavenger#removeWhenFarAway} 覆写成 false。</li>
+ * </ol>
+ * <b>和平难度不在此列</b>：{@code Mob#checkDespawn()} 的第一条分支是
+ * 「难度为和平 <b>且</b> {@code shouldDespawnInPeaceful()}」→ 直接删掉，
+ * 而 {@code Scavenger} 继承的 {@code Monster} 把那个判据覆写成 {@code true}，
+ * 于是它会在和平难度下正常消失——与其它真菌一致（Spore 的出生条件在和平难度也是直接 false）。
+ *
+ * <p>同理，{@code Womb} 的同化由 {@code WombAssimilationMixin} 单独处理，
+ * 不是靠拦 {@code discard()}——拦在出口上会把上面这条和平难度的路一起堵死。
+ *
  * <h2>{@code remap = false}</h2>
  * 注入目标是 {@code java.util.List#contains}——<b>JDK</b> 的方法。
  * 生产环境里只有原版与 Forge 的成员会被改名，JDK 与模组自己的成员都保持字面名，

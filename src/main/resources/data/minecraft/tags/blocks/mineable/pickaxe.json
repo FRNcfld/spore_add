@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "spore_add:frost_sigh"
+    "spore_add:frost_sigh",
+    "spore_add:frost_sigh_0"
   ]
 }

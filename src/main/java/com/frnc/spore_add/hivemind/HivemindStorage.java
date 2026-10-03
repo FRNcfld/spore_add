@@ -5,7 +5,9 @@ import java.util.List;
 
 import com.Harbinger.Spore.Core.Sentities;
 import com.Harbinger.Spore.Sentities.Organoids.Proto;
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddFungusConfig;
+import com.frnc.spore_add.debug.SporeAddDebug;
 import com.frnc.spore_add.world.SafeSpot;
 
 import net.minecraft.nbt.CompoundTag;
@@ -108,6 +110,13 @@ public final class HivemindStorage {
             level.addFreshEntity(mob);
             deployed++;
         }
+        if (deployed < limit) {
+            // 没投满是要查的，而它有两种完全不同的成因：条目都已在本次袭击投过（正常），
+            // 或者造不出生物 / 找不到落点（异常，见 spawnOne 的两条 warn）。
+            // 调用点是"每波开头"与"应急投放（带冷却）"，不热。
+            SporeAddDebug.log(Area.HIVEMIND, "投放未投满：存储 {} 条、请求 {} 只、实投 {} 只",
+                    stored.size(), limit, deployed);
+        }
         return deployed;
     }
 
@@ -126,10 +135,15 @@ public final class HivemindStorage {
         // 查不到（Spore 版本变化导致某种实体不存在了）就是"少投一只"，而不是崩掉
         Entity entity = EntityType.create(entry, level).orElse(null);
         if (!(entity instanceof Mob mob)) {
+            // 造不出来多半是 Spore 换了版本的实体 id（记录随实体存了盘，跨版本会失效）。
+            SporeAddDebug.warn(Area.HIVEMIND, "投放失败：这条记录造不出生物（id={}）", entry.getString("id"));
             return null;
         }
         Vec3 spot = SafeSpot.near(mob, center, 0.0D, SporeAddFungusConfig.hivemindDeployScatterRadius());
         if (spot == null) {
+            // 心智卡在自己穹顶壳里时最常看到这条——散开半径不够，整批都投不出来。
+            SporeAddDebug.warn(Area.HIVEMIND, "投放失败：{} 周围 {} 格内没有能站的位置",
+                    center, SporeAddFungusConfig.hivemindDeployScatterRadius());
             return null;
         }
         // 与 Spore 自己的 summonMob 一样打上来源标记，让它的 AI 知道自己从哪来

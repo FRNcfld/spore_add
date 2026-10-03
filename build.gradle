@@ -6,8 +6,8 @@ plugins {
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
     // MixinGradle：SpongePowered 官方 Gradle 插件。ForgeGradle 6 的 UserDevExtension
     // 移除了旧的 `mixin {}` 块，没有这个插件，mixin 配置在开发环境不会被注册，
-    // 表现为"编译进 jar 但运行时不触发"。本 mod 目前还没有 mixin，先接好管线，
-    // 之后往 spore_add.mixins.json 的 mixins 列表里加类即可。
+    // 表现为"编译进 jar 但运行时不触发"。
+    // 本 mod 已大量使用 mixin（当前 22 个，清单见 spore_add.mixins.json）。
     id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
 }
 
@@ -98,7 +98,8 @@ minecraft {
 
 // Mixin 配置：编译期生成 spore_add.refmap.json 并注册 mixin 配置，
 // jar 清单里会自动写入 MixinConfigs（Forge 据此加载本 mod 的 mixin）。
-// 配置文件里 mixins 列表暂时为空，加 mixin 类时同步补进去。
+// 新增 mixin 类时，记得同步补进 spore_add.mixins.json 的 mixins / client 列表——漏了会表现为
+// "类编译进 jar 但注入从不生效"，不会报错。
 mixin {
     add sourceSets.main, 'spore_add.refmap.json'
     config 'spore_add.mixins.json'

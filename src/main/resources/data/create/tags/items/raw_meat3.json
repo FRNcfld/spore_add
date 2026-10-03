@@ -1,12 +1,12 @@
 {
   "replace": false,
   "values": [
-    "alexsmobs:flying_fish",
-    "alexsmobs:cosmic_cod",
-    "alexsmobs:lobster_tail",
-    "alexsmobs:moose_ribs",
-    "alexsmobs:blobfish",
-    "alexsmobs:kangaroo_meat",
-    "alexsmobs:raw_catfish"
+    { "id": "alexsmobs:flying_fish", "required": false },
+    { "id": "alexsmobs:cosmic_cod", "required": false },
+    { "id": "alexsmobs:lobster_tail", "required": false },
+    { "id": "alexsmobs:moose_ribs", "required": false },
+    { "id": "alexsmobs:blobfish", "required": false },
+    { "id": "alexsmobs:kangaroo_meat", "required": false },
+    { "id": "alexsmobs:raw_catfish", "required": false }
   ]
 }

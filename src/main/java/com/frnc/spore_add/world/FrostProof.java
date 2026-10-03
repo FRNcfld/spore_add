@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * <ol>
  *   <li><b>硬度为负的方块</b>（基岩、屏障、命令方块、末地传送门框架……）——原版的定义就是
  *       "打不碎"，那它显然也不该被一发爆炸抹掉。这一条不靠标签，白送的。</li>
- *   <li><b>数据包标签 {@code #spore_add:frost_proof}</b>——显式列出来的，默认有四个：
+ *   <li><b>数据包标签 {@code #spore_add:frost_proof}</b>——显式列出来的，默认有五个：
  *     <ul>
  *       <li>{@code nether_portal}——下界门中间那层紫色方块；</li>
  *       <li>{@code end_portal}——末地龙池里那个回城传送门（打完末影龙出现的，就是它，

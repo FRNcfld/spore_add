@@ -5,6 +5,7 @@ import com.frnc.spore_add.block.ModBlocks;
 import com.frnc.spore_add.entity.ModEntities;
 import com.frnc.spore_add.fluid.ModFluids;
 
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -16,7 +17,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * 本 mod 的物品注册表：三种流体的桶，以及「冰霜新星」。
+ * 本 mod 的物品注册表：三种流体的桶、「冰霜新星」、「冰雪的叹息」，
+ * 以及两个<b>占位</b>条目（见 {@link #FROST_NOVA_0} 与 {@link #FROST_SIGH_0}）。
  *
  * <p>三个桶的物品属性与原版水桶逐项一致（{@code craftRemainder(Items.BUCKET)} + {@code stacksTo(1)}）：
  * 用掉之后退还一个空桶，且不可堆叠——后者不只是习惯，{@code BucketItem} 倒液体时要修改手上这一格，
@@ -68,6 +70,41 @@ public final class ModItems {
     public static final RegistryObject<Item> FROST_SIGH =
             ITEMS.register("frost_sigh", () -> new FrostSighItem(ModBlocks.FROST_SIGH.get(),
                     new Item.Properties().stacksTo(1)));
+
+    /**
+     * 「冰霜新星（半成品）」——一个<b>占位</b>物品，没有任何机制。
+     *
+     * <h2>它为什么存在</h2>
+     * 给<b>整合包当配方锚点</b>用：整合包作者要在自己的数据包里写「由什么合成什么」，
+     * 就需要一个有稳定 id、能在 JEI 里显示、能被标签引用的实体。
+     * 它刻意不带任何行为（不是 {@code FrostNovaItem}、不能蓄力、右键无效），
+     * 所以整合包怎么用它都不会与 mod 的玩法打架。
+     *
+     * <h2>为什么另开一个 id 而不是复用 {@code frost_nova}</h2>
+     * 行为完全不同，所以不能共用 id：真货只能堆 16、每次发射消耗 1 个、背后还有一整套蓄力与
+     * 二次爆炸逻辑；当配方材料既别扭、又容易被玩家误认成武器。占位物品走的是相反的路
+     * ——普通物品、可堆叠 64、什么都不做。
+     *
+     * <p><b>但外观是刻意做成一样的</b>：它没有自己的贴图，物品模型直接 parent 到
+     * {@code spore_add:item/frost_nova}（连那三个蓄力变体的 {@code overrides} 一起继承——
+     * 普通物品没有 {@code pulling} 属性，那些 override 永远不会命中，只会用到基础外形）。
+     * 于是玩家一眼就知道这两件东西是同一族；名字里那个「（半成品）」才是区分它们的地方。
+     */
+    public static final RegistryObject<Item> FROST_NOVA_0 =
+            ITEMS.register("frost_nova_0", () -> new Item(new Item.Properties()));
+
+    /**
+     * 「冰雪的叹息（半成品）」的方块物品——同样是<b>占位</b>，
+     * 它为什么存在、以及外观为什么与真货一样，见 {@link #FROST_NOVA_0}。
+     *
+     * <p>与方块本体（{@code ModBlocks.FROST_SIGH_0}）一样不带任何机制，可堆叠 64（默认值），
+     * 与那颗不可堆叠、激活后挖不动的核弹正好相反。
+     *
+     * <p>{@code ModBlocks.FROST_SIGH_0.get()} 同样放在 lambda 里，理由见 {@link #FROST_SIGH}。
+     */
+    public static final RegistryObject<Item> FROST_SIGH_0 =
+            ITEMS.register("frost_sigh_0", () -> new BlockItem(ModBlocks.FROST_SIGH_0.get(),
+                    new Item.Properties()));
 
     /**
      * 拾荒者的刷怪蛋。

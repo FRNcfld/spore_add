@@ -6,8 +6,10 @@ import java.util.Set;
 import com.Harbinger.Spore.Core.Sblocks;
 import com.Harbinger.Spore.Sentities.Organoids.Proto;
 import com.frnc.spore_add.SporeAdd;
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddFungusConfig;
 import com.frnc.spore_add.compat.SporeCompat;
+import com.frnc.spore_add.debug.SporeAddDebug;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -72,6 +74,10 @@ public final class DomeBreach {
                 return;
             }
         }
+        // 整场爆炸一块能漏的壳都没碰上——这一行就是「穹顶被打穿却什么都没漏」的答案。
+        // 每次爆炸只打一行（不是每块方块一行）：方块数是几十到几百，逐块打就是刷屏。
+        SporeAddDebug.log(Area.HIVEMIND, "穹顶漏出：本次爆炸的 {} 块受影响方块里没有可漏的"
+                + "（不是躯壳 / 附近无心智 / 存货为空 / 冷却中）", affected.size());
     }
 
     /**
@@ -99,9 +105,15 @@ public final class DomeBreach {
         // 先落冷却再掷骰：否则"砸了几十块"就是几十次独立掷骰，一次爆炸能让存货决堤。
         // 冷却落在心智身上而不是方块上，所以多只心智各算各的。
         data.putLong(KEY_COOLDOWN, now + SporeAddFungusConfig.hivemindSpillCooldownTicks());
-        if (level.random.nextDouble() < SporeAddFungusConfig.hivemindSpillChance()) {
+        double chance = SporeAddFungusConfig.hivemindSpillChance();
+        double roll = level.random.nextDouble();
+        if (roll < chance) {
             HivemindStorage.spill(hivemind, level, hivemind.position(), limit);
         }
+        // 到这里说明"真的砸到壳了、附近有心智、存货不为空、且冷却已过"——一次爆炸最多走到这里一次
+        // （上面落了冷却，本方法立刻 return true，调用方收手），所以不会刷屏。
+        SporeAddDebug.log(Area.HIVEMIND, "穹顶漏出判定：{} 处，概率 {}、掷出 {} → {}",
+                pos, chance, roll, roll < chance ? "漏出" : "不漏");
         return true;
     }
 

@@ -307,7 +307,7 @@ public final class ModEvents {
         // 优先级取 3（比 Spore 的玩家/白名单目标低），理由见 HuntPreyGoal 的类注释。
         // 这里不判 huntEnabled：开关交给目标自己的 canUse，于是改配置不需要让实体重新入列
         if (!hasGoal(infected.targetSelector, HuntPreyGoal.class)) {
-            infected.targetSelector.addGoal(HuntPreyGoal.PRIORITY, new HuntPreyGoal(infected));
+            infected.targetSelector.addGoal(SporeAddFungusConfig.huntPriority(), new HuntPreyGoal(infected));
         }
         if (!hasGoal(infected.goalSelector, CollectLootGoal.class)) {
             infected.goalSelector.addGoal(SporeAddFungusConfig.lootPriority(), new CollectLootGoal(infected));

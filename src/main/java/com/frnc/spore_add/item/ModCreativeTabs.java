@@ -53,6 +53,11 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.HIGH_ENERGY_FUEL_BUCKET.get());
                         output.accept(ModItems.FROST_NOVA.get());
                         output.accept(ModItems.FROST_SIGH.get());
+                        // 两个占位条目（整合包的配方锚点，见 ModItems 的类注释）也放进来：
+                        // 整合包作者要拿它们当材料试配方，创造模式里翻得到才方便。
+                        // 它们外观与上面两件真货一样，只有名字里的「（半成品）」能区分。
+                        output.accept(ModItems.FROST_NOVA_0.get());
+                        output.accept(ModItems.FROST_SIGH_0.get());
                         output.accept(ModItems.SCAVENGER_SPAWN_EGG.get());
                         // 附魔书不是注册项，得自己构造出来
                         output.accept(warmthBook());

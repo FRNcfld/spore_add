@@ -15,10 +15,13 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
  * 以及 {@code at_mob} 关掉时整条不成立。本目标绕开这两道，只保留 {@code blacklist}
  * ——名单的取舍见 {@link FungusCombat#isHuntable}。
  *
- * <h2>优先级为什么是 3</h2>
+ * <h2>优先级为什么默认是 3</h2>
  * Spore 的玩家 / 白名单目标是优先级 1、动物与其它生物也是 1。本目标排在它们<b>后面</b>，
  * 于是"玩家在身边"时永远先由 Spore 那条接管，本目标只在玩家那条够不着时才出结果。
  * 这样"判定不管玩家"这条约定不需要靠代码去守，靠优先级就成立。
+ *
+ * <p>它挂在 {@code fungus.huntPriority}（默认 3）上。**改这一项要守住"大于 1"**，
+ * 否则本目标会抢在 Spore 的玩家目标之前出结果，而它不做任何玩家判定。
  *
  * <h2>这里没有"打得过才打"</h2>
  * 判定不写在本目标的谓词里，而是统一放在 {@code LivingChangeTargetEvent} 上（见 {@link FungusCombat} 的类注释）。
@@ -28,11 +31,6 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
  * {@code TargetGoal#getFollowDistance}），所以需求 4 的感知加成对这条目标自动生效。
  */
 public class HuntPreyGoal extends NearestAttackableTargetGoal<LivingEntity> {
-
-    /**
-     * 挂在目标选择器上的优先级。必须<b>大于</b> Spore 玩家/白名单目标的 1，见类注释。
-     */
-    public static final int PRIORITY = 3;
 
     public HuntPreyGoal(Mob mob) {
         // 搜索间隔来自配置，默认 10——那是原版各简版构造器与 Spore 自己用的值。

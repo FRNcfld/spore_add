@@ -1,8 +1,10 @@
 package com.frnc.spore_add.hatred;
 
 import com.frnc.spore_add.SporeAdd;
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddFungusConfig;
 import com.frnc.spore_add.compat.SporeCompat;
+import com.frnc.spore_add.debug.SporeAddDebug;
 import com.frnc.spore_add.fungus.FungusCombat;
 
 import javax.annotation.Nullable;
@@ -98,23 +100,40 @@ public final class HatredEvents {
         // 一、真菌被杀 → 凶手涨恨意值
         if (FungusCombat.isFungus(victim)) {
             if (responsiblePlayer(event.getSource()) instanceof ServerPlayer player) {
-                HatredManager.add(player, HatredValues.killValue(victim));
+                double value = HatredValues.killValue(victim);
+                HatredManager.add(player, value);
+                SporeAddDebug.log(Area.HATRED, "击杀真菌：{} → {} 涨 {} 恨意值",
+                        victim.getType(), player.getGameProfile().getName(), value);
+            } else {
+                // 「杀了真菌却没涨恨意值」的头号成因：凶手归不到任何玩家头上
+                // （玩家的宠物没有主人、别的模组的投射物、自然死亡……）。
+                SporeAddDebug.log(Area.HATRED, "击杀真菌：{} 死亡，但归不到玩家头上，不涨恨意值",
+                        victim.getType());
             }
             return;   // 真菌不会同时是玩家或心智，不必再往下判
         }
 
         // 二、玩家死亡 → 死于真菌之手时重罚
         if (victim instanceof ServerPlayer player) {
-            if (isFungusDamage(event.getSource())) {
+            boolean byFungus = isFungusDamage(event.getSource());
+            if (byFungus) {
                 onPlayerKilledByFungus(player);
             }
+            SporeAddDebug.log(Area.HATRED, "玩家死亡：{}，判定为死于真菌之手={}",
+                    player.getGameProfile().getName(), byFungus);
             return;
         }
 
         // 三、心智被杀 → 凶手大幅降恨意值
         if (SporeCompat.isHivemind(victim)) {
             if (responsiblePlayer(event.getSource()) instanceof ServerPlayer player) {
-                HatredManager.reduceByRatio(player, SporeAddFungusConfig.hivemindKillLossRatio());
+                double ratio = SporeAddFungusConfig.hivemindKillLossRatio();
+                HatredManager.reduceByRatio(player, ratio);
+                SporeAddDebug.log(Area.HATRED, "击杀心智：{} → {} 按比例 {} 降恨意值",
+                        victim.getType(), player.getGameProfile().getName(), ratio);
+            } else {
+                SporeAddDebug.log(Area.HATRED, "击杀心智：{} 死亡，但归不到玩家头上，不降恨意值",
+                        victim.getType());
             }
         }
     }

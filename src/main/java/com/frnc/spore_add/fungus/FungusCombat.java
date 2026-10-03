@@ -3,8 +3,10 @@ package com.frnc.spore_add.fungus;
 import java.util.List;
 import java.util.Objects;
 
+import com.frnc.spore_add.SporeAddDebugConfig.Area;
 import com.frnc.spore_add.SporeAddFungusConfig;
 import com.frnc.spore_add.compat.SporeCompat;
+import com.frnc.spore_add.debug.SporeAddDebug;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -133,11 +135,27 @@ public final class FungusCombat {
         }
         double ticksToKillTarget = effectiveHealth(target) / selfDps;
         double ticksToDie = effectiveHealth(self) / targetDps;
-        return ticksToKillTarget <= ticksToDie * SporeAddFungusConfig.huntCautionRatio();
+        boolean win = ticksToKillTarget <= ticksToDie * SporeAddFungusConfig.huntCautionRatio();
+        // 「打得过才打」的判定过程。调用点是 LivingChangeTargetEvent，战斗里目标切换可能很频繁，
+        // 所以用 on() 守卫：这几个数虽然已经算出来了，但拼串与那个变长数组能省则省。
+        if (SporeAddDebug.on(Area.FUNGUS)) {
+            SporeAddDebug.log(Area.FUNGUS,
+                    "胜负判定：{} 打 {} → {}（我方 {} DPS / 对方 {} DPS，杀它 {} tick / 被它杀 {} tick，谨慎系数 {}）",
+                    self.getType(), target.getType(), win ? "开打" : "放弃",
+                    selfDps, targetDps, ticksToKillTarget, ticksToDie,
+                    SporeAddFungusConfig.huntCautionRatio());
+        }
+        return win;
     }
 
-    /** 每秒输出。没有 {@code ATTACK_DAMAGE} 属性的生物返回 0（= 不会还手）。 */
-    private static double dps(LivingEntity entity) {
+    /**
+     * 每秒输出。没有 {@code ATTACK_DAMAGE} 属性的生物返回 0（= 不会还手）。
+     *
+     * <p><b>另一个读者是 {@code FleeDangerGoal}</b>：拾荒者不还手，但它要判断"盯着我的那几只
+     * 多久能打死我"，用的正是本方法与 {@link #effectiveHealth}。所以这两个是 public——
+     * 复刻一份到那边的话，{@link #attributeValue} 里那条"属性缺失会抛异常"的处理迟早会分叉。
+     */
+    public static double dps(LivingEntity entity) {
         return attributeValue(entity, Attributes.ATTACK_DAMAGE);
     }
 
@@ -147,8 +165,11 @@ public final class FungusCombat {
      * <p>那个"每点加成"来自配置项 {@code fungus.huntArmorEhpPerPoint}，默认 0.04——
      * 原版的护甲减伤<b>同时取决于护甲与这一击的伤害</b>，而这里要做的是"还没交手，先估谁更硬"，
      * 拿不到"这一击多大"，所以退化成"20 点护甲减 80%"这个上界。它只在判定里用，不改真实伤害。
+     *
+     * <p>对拾荒者来说它同样合适：那个值随存活时间成长，所以"活得越久越敢留在原地"这件事
+     * 是自动成立的，不必为逃跑另开一套成长曲线。
      */
-    private static double effectiveHealth(LivingEntity entity) {
+    public static double effectiveHealth(LivingEntity entity) {
         return entity.getMaxHealth()
                 * (1.0D + attributeValue(entity, Attributes.ARMOR) * SporeAddFungusConfig.huntArmorEhpPerPoint());
     }

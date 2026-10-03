@@ -68,46 +68,14 @@ public final class FrostSighBlast {
      */
     private static final int FUNGAL_FLAGS = Block.UPDATE_ALL;
 
-    /** 每个流体源变成液态寒冷的概率。 */
-    private static final float SOURCE_TO_LIQUID_COLD_CHANCE = 0.01F;
-
-    /** 到这个相对半径（距离 / 影响半径）之前一律铺三层。 */
-    private static final double FULL_LAYERS_UNTIL = 0.75D;
-
-    /** 到这个相对半径之前是两层，再往外只有一层。 */
-    private static final double TWO_LAYERS_UNTIL = 0.92D;
-
-    // ------------------------------------------------------------------
-    // 冰刺（需求：像原版冰刺之地那样，越靠近中心越雄伟）
-    // ------------------------------------------------------------------
-
-    /** 到这个相对半径之外就不长冰刺了。 */
-    private static final double SPIKE_MAX_T = 0.75D;
-
-    /**
-     * 低于这个高度就干脆不长。
-     *
-     * <p><b>这一条是给"小冰柱"准备的。</b>圆锥的<b>尖端</b>才高，靠近底面的那一圈几乎贴着冰面；
-     * 再乘上随距离衰减的中心系数，绝大多数列算出来只有 1~3 格——远看就是一地三五格高的小桩子，
-     * 而不是"冰刺"。与其让它们以那副样子出现，不如直接不生。
-     */
-    private static final int SPIKE_MIN_HEIGHT = 10;
-
-    /** 山尖之间的间隔（格）。越小越密——这是"数量"最主要的旋钮。 */
-    private static final int SPIKE_CELL = 7;
-
-    /**
-     * 多少个格子里才有一个真的长出山尖（取模）。越小越密。
-     *
-     * <p>1/2。格子 7 格见方、锥体底面半径 3（6 格宽），所以相邻山尖平均隔 9.9 格——足够各自成形。
-     */
-    private static final int SPIKE_RARITY = 2;
-
-    /** 一根冰刺底面能铺多宽（半径，格）。越小越"针"，越大越"丘"。 */
-    private static final int SPIKE_BASE_RADIUS = 3;
-
-    /** 正中心最高的一根冰刺有多高（格）。 */
-    private static final int SPIKE_MAX_HEIGHT = 70;
+    // 铺冰分层与冰刺形状的全部数值都来自配置（frostSigh 段与 [frostSigh.spike] 子表），
+    // **只在方法体内读**，不做成静态常量——静态常量会在类初始化时定死，改配置就得重启。
+    //
+    // 算术约束（配置里的 defineInRange 已经锁住，这里记下原因）：
+    //   · spike.maxRelativeRadius 是中心系数的除数 → 下限 0.01，填 0 会算出无穷高
+    //   · spike.cellSize       是 floorDiv 的除数   → 下限 1
+    //   · spike.rarity         是 floorMod 的模数   → 下限 1，**填 0 会直接抛 ArithmeticException 崩服**
+    //   · spike.baseRadius     是高度公式的除数     → 下限 1
 
     private FrostSighBlast() {
     }
@@ -224,7 +192,8 @@ public final class FrostSighBlast {
                             || fluid.getFluidType() == ModFluids.LIQUID_COLD_TYPE.get()) {
                         continue;   // 液态寒冷豁免
                     }
-                    if (fluid.isSource() && level.random.nextFloat() < SOURCE_TO_LIQUID_COLD_CHANCE) {
+                    if (fluid.isSource()
+                            && level.random.nextDouble() < SporeAddPlayerConfig.frostSighSourceToLiquidColdChance()) {
                         // 同样走 quiet：不然整片冰面上会散布一堆小十字
                         LiquidColdBlock.placeQuietly(level, cursor);
                     } else {
@@ -271,10 +240,10 @@ public final class FrostSighBlast {
         // 用同一个 horizontal 系数取色（传 layerT = 0），于是一根刺是**单一颜色**——
         // 靠中心的刺是整根蓝冰，靠外的整根浮冰，与地面上那套"中心蓝、外围浮"是同一套语言。
         double spikeCenter = radius <= 0 ? 0.0D
-                : 1.0D - distance / ((double) radius * SPIKE_MAX_T);
+                : 1.0D - distance / ((double) radius * SporeAddPlayerConfig.frostSighSpikeMaxRelativeRadius());
         int spike = spikeHeight(x, z, Mth.clamp(spikeCenter, 0.0D, 1.0D), spikeSalt);
-        if (spike < SPIKE_MIN_HEIGHT) {
-            // 太矮的不要，见 SPIKE_MIN_HEIGHT。这一条就是"清除那些三格高的小柱子"。
+        if (spike < SporeAddPlayerConfig.frostSighSpikeMinHeight()) {
+            // 太矮的不要，见 spike.minHeight。这一条就是"清除那些三格高的小柱子"。
             return;
         }
         for (int i = 0; i < spike; i++) {
@@ -297,10 +266,12 @@ public final class FrostSighBlast {
      */
     private static int layersFor(double distance, int radius) {
         double t = radius <= 0 ? 1.0D : distance / radius;
-        if (t < FULL_LAYERS_UNTIL) {
+        // 两个分界都来自配置。**注意层数本身 3/2/1 是写死的**——这两项只改"在哪变薄"，
+        // 不改"变到几层"。访问器里保证了两层分界不会小于三层分界。
+        if (t < SporeAddPlayerConfig.frostSighFullLayersUntil()) {
             return 3;
         }
-        return t < TWO_LAYERS_UNTIL ? 2 : 1;
+        return t < SporeAddPlayerConfig.frostSighTwoLayersUntil() ? 2 : 1;
     }
 
     /**
@@ -334,12 +305,12 @@ public final class FrostSighBlast {
      * 也就不存在"世界重载后那张表丢了、剩下的冰刺长不出来"这种问题。
      *
      * <h2>怎么长出一根根"锥体"而不是一片噪点</h2>
-     * 把地图切成 {@link #SPIKE_CELL} 见方的格子，其中 {@link #SPIKE_RARITY} 分之一的格子里放一个山尖，
+     * 把地图切成 {@code spike.cellSize} 见方的格子，其中 {@code spike.rarity} 分之一的格子里放一个山尖，
      * 山尖的高度沿半径线性收到 0，于是周围形成一个锥体。判断某一列时看的是<b>3×3 个格子</b>——
      * 山尖可能长在隔壁格子里、锥体伸进本格，只看自己那一格会把锥体削掉一角。
      *
      * <h2>"越靠近中心越雄伟"</h2>
-     * 算出来的高度再乘一个中心系数：正中心满高，到 {@link #SPIKE_MAX_T} 处降到 0。
+     * 算出来的高度再乘一个中心系数：正中心满高，到 {@code spike.maxRelativeRadius} 处降到 0。
      *
      * <p><b>系数在这里开了平方根。</b>线性版本下，半径 128 的盘子里只有最里面那一小圈算得上高，
      * 三分之二半径处就只剩三成了（实测平均高度只有 4.6 格——满地的矮桩子）。
@@ -351,29 +322,35 @@ public final class FrostSighBlast {
         if (centerFactor <= 0.0D) {
             return 0;
         }
+        // 一次读出来用整轮：四个值分属同一套形状参数，中途被改的话至少这一列用的是同一组
+        int cell = SporeAddPlayerConfig.frostSighSpikeCellSize();
+        int rarity = SporeAddPlayerConfig.frostSighSpikeRarity();
+        int baseRadius = SporeAddPlayerConfig.frostSighSpikeBaseRadius();
+        int maxHeight = SporeAddPlayerConfig.frostSighSpikeMaxHeight();
+
         double falloff = Math.sqrt(Math.min(1.0D, centerFactor));
-        int cellX = Math.floorDiv(x, SPIKE_CELL);
-        int cellZ = Math.floorDiv(z, SPIKE_CELL);
+        int cellX = Math.floorDiv(x, cell);
+        int cellZ = Math.floorDiv(z, cell);
         double best = 0.0D;
 
         for (int cx = cellX - 1; cx <= cellX + 1; cx++) {
             for (int cz = cellZ - 1; cz <= cellZ + 1; cz++) {
                 long hash = spikeHash(cx, cz, salt);
-                if (Math.floorMod(hash, SPIKE_RARITY) != 0) {
+                if (Math.floorMod(hash, rarity) != 0) {
                     continue;   // 这一格没有山尖
                 }
                 // 山尖在本格内的落点，以及它自身的高度系数（0.45~1.0，免得所有刺一样高）
-                int peakX = cx * SPIKE_CELL + Math.floorMod(hash >> 8, SPIKE_CELL);
-                int peakZ = cz * SPIKE_CELL + Math.floorMod(hash >> 20, SPIKE_CELL);
+                int peakX = cx * cell + Math.floorMod(hash >> 8, cell);
+                int peakZ = cz * cell + Math.floorMod(hash >> 20, cell);
                 double peakScale = 0.45D + 0.55D * (Math.floorMod(hash >> 32, 256) / 255.0D);
 
                 double dx = x - peakX;
                 double dz = z - peakZ;
                 double d = Math.sqrt(dx * dx + dz * dz);
-                if (d >= SPIKE_BASE_RADIUS) {
+                if (d >= baseRadius) {
                     continue;
                 }
-                double height = SPIKE_MAX_HEIGHT * peakScale * (1.0D - d / SPIKE_BASE_RADIUS);
+                double height = maxHeight * peakScale * (1.0D - d / baseRadius);
                 if (height > best) {
                     best = height;
                 }
@@ -458,7 +435,7 @@ public final class FrostSighBlast {
      * 补充机制 2：给球内所有生物施加冻伤，层数与时长来自配置。
      *
      * <p>走 {@code addEffect}，所以会和「烈阳」的按件削弱自然衔接——
-     * 那道削弱挂在 {@code LivingEntity#addEffect} 上（见 {@code WarmthFrostbiteMixin}），
+     * 那道削弱挂在 {@code LivingEntity#addEffect} 上（见 {@code WarmthFrostbiteScalingMixin}），
      * 这里不需要知道玩家穿了几件。
      *
      * <p>玩家被冰封那件事<b>不在这里</b>：它需要一个跨 tick 的计时器，

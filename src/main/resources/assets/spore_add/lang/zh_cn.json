@@ -10,6 +10,8 @@
   "item.spore_add.high_energy_fuel_bucket": "高能燃料桶",
   "item.spore_add.frost_nova": "冰霜新星",
   "block.spore_add.frost_sigh": "冰雪的叹息",
+  "item.spore_add.frost_nova_0": "冰霜新星（半成品）",
+  "block.spore_add.frost_sigh_0": "冰雪的叹息（半成品）",
 
   "advancements.spore_add.absolute_zero.title": "绝对零度",
   "advancements.spore_add.absolute_zero.description": "取得液态寒冷",
@@ -56,7 +58,6 @@
   "message.spore_add.raid_dread": "恐惧吧……",
   "message.spore_add.raid_arena": "地面裂开了。",
   "message.spore_add.raid_waves": "菌群开始围剿（%s 波）……",
-  "message.spore_add.raid_begin": "它们来了。",
   "message.spore_add.raid_survived": "你熬过去了。",
   "message.spore_add.raid_failed": "菌群记住了你。",
 
@@ -72,6 +73,7 @@
   "message.spore_add.scan.buff_reduction": "    减伤 %s",
   "message.spore_add.scan.buff_final_damage": "    最终伤害加成 %s",
   "message.spore_add.raid_fizzled": "菌群退去了……",
+  "message.spore_add.sweep": "菌群扫荡了这个维度……",
 
   "entity.spore_add.scavenger": "拾荒者",
   "item.spore_add.scavenger_spawn_egg": "拾荒者刷怪蛋",
@@ -83,11 +85,26 @@
   "command.spore_add.hatred.threshold": "  袭击档位：%s",
   "command.spore_add.hatred.set": "已将 %s 的恨意值设为 %s",
 
+  "command.spore_add.debug.header": "调试检查点（总开关：%s）：",
+  "command.spore_add.debug.area": "  %s：%s",
+  "command.spore_add.debug.state_on": "开",
+  "command.spore_add.debug.state_off": "关",
+  "command.spore_add.debug.set_master": "调试检查点总开关已设为 %s（已写入配置文件）",
+  "command.spore_add.debug.set_area": "调试检查点 %s 已设为 %s（已写入配置文件）",
+  "command.spore_add.debug.unknown_area": "没有这个分组：%s。可用：%s",
+
   "sounds.spore.engine": "引擎运转",
   "sounds.spore.gast_ambient": "宿主低吼",
   "sounds.spore.nuke": "核爆",
   "sounds.spore.saw_sound": "锯刃转动",
   "sounds.spore.spit": "喷吐",
   "sounds.spore.surgery": "手术进行中",
-  "sounds.spore.tumor": "肿瘤爆裂"
+  "sounds.spore.tumor": "肿瘤爆裂",
+
+  "subtitles.spore_add.scavenger_ambient": "拾荒者低吼",
+  "subtitles.spore_add.scavenger_hurt": "拾荒者受伤",
+  "subtitles.spore_add.scavenger_death": "拾荒者死亡",
+  "subtitles.spore_add.scavenger_pickup": "拾荒者捡拾",
+  "subtitles.spore_add.scavenger_flee": "拾荒者逃跑",
+  "subtitles.spore_add.scavenger_step": "拾荒者移动"
 }

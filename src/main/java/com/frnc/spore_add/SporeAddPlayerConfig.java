@@ -20,8 +20,11 @@ import net.minecraftforge.common.ForgeConfigSpec;
  * 于是「想把怪调强一点」只动真菌那一份，「想让自己舒服一点」只动这一份，
  * 不必在两份文件之间来回对照。
  *
+ * <p>还有第三份 {@code spore_add-debug-common.toml}（{@link SporeAddDebugConfig}），
+ * 它<b>不参与</b>上面这条分类——那是默认全关的调试检查点，横跨玩家侧与真菌侧。
+ *
  * <h2>为什么文件名是手写的</h2>
- * 两份都用显式文件名注册。Forge 默认按 {@code modId-类型} 拼名字，两个 COMMON 会撞成同一个
+ * 三份都用显式文件名注册。Forge 默认按 {@code modId-类型} 拼名字，三个 COMMON 会撞成同一个
  * {@code spore_add-common.toml}，而 {@code ConfigTracker} 撞名会直接抛
  * {@code "Config conflict detected!"} 把游戏崩掉。
  *
@@ -31,6 +34,28 @@ import net.minecraftforge.common.ForgeConfigSpec;
  * 而且只有一份全局文件；SERVER 类型会按存档分别生成、并把值同步给客户端——那份同步对我们毫无用处。
  * 代价是它不跟存档走：换个存档用的是同一份数值。
  *
+ * <h2>这一份不会、也不能搬进数据包</h2>
+ * 有几项要被<b>客户端</b>读取：{@code FrostNovaItem} 的 tooltip（射程 / 威力 / 二次爆炸那几行
+ * {@code %s}）与 {@code SporeAddClient} 的蓄力动画都靠它。而数据包（{@code SimpleJsonResourceReloadListener}
+ * 那一类）<b>只在服务端存在，也不会同步给客户端</b>——搬过去之后，专用服务器上客户端的 tooltip
+ * 会显示错误数字。留在 COMMON 配置里是这个原因，不是懒得改。
+ *
+ * <p>真菌侧那一份同样是配置，但理由不同（它其实是纯服务端的）：那份注释里有完整的
+ * 「表走数据包、旋钮留配置」的分工说明，见 {@link SporeAddFungusConfig}。
+ *
+ * <h2>段落顺序</h2>
+ * 按「冰霜武器 → 冰霜的共用机制与对策 → 另一套武器体系 → 增益」排：
+ * {@code frostNova}（含 {@code [frostNova.secondary]}）→ {@code frostSigh}（含 {@code [frostSigh.spike]}）
+ * → {@code liquidCold} → {@code coolant} → {@code frostbite} → {@code warmth} →
+ * {@code combustion} → {@code playerBuffs}。
+ *
+ * <p>其中 {@code frostbite} 与 {@code warmth} 是<b>所有冰霜来源共用</b>的机制与对策，
+ * 所以排在各个武器之后而不是塞进某一件武器里：冷却液、液态寒冷、冰霜新星、冰雪的叹息
+ * 全都走 {@code frostbite} 那一组数值。
+ *
+ * <p><b>三处顺序必须一致</b>：静态块里 {@code new} 的顺序（决定 toml 排布）、
+ * 各内部 class 的声明顺序、以及访问器的排列顺序。加段或改段名时三处一起改。
+ *
  * <h2>配置值一律不在静态初始化器里读</h2>
  * {@link #SPEC} 的静态块只<b>声明</b>各项，真正的 {@code get()} 全部发生在下面的访问器里，也就是
  * 游戏运行期。这样与配置何时加载无关，不会出现"配置还没读就取值"的异常。
@@ -39,7 +64,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
  *
  * <h2>为什么冻伤等级的上限是 127</h2>
  * 配置里的 {@code frostbiteLevel} 指的是<b>界面上的显示层数</b>（本 mod 的约定：层数 = amplifier + 1，
- * 与 {@code CoolantBlock.FROSTBITE_CAP = 10} 表示"封顶 10 层"一致）。它最终会写成 amplifier，
+ * 与 {@code coolant.frostbiteCap} 默认的 10 表示"封顶 10 层"一致）。它最终会写成 amplifier，
  * 而 amplifier 的网络同步与存档序列化都是字节，超过 127 会静默损坏（详见 {@code FrostbiteLevels} 的类注释），
  * 所以这里封到 127——正好是"层数 127 对应 amplifier 126"。
  */
@@ -53,13 +78,19 @@ public final class SporeAddPlayerConfig {
 
     private static final FrostNova FROST_NOVA;
     private static final LiquidCold LIQUID_COLD;
+    private static final Coolant COOLANT;
     private static final FrostSigh FROST_SIGH;
+    private static final MistClear MIST_CLEAR;
+    private static final Frostbite FROSTBITE;
+    private static final Warmth WARMTH;
+    private static final Combustion COMBUSTION;
     private static final PlayerBuffs PLAYER_BUFFS;
 
     static {
         // **这里的顺序就是生成出来的 toml 里的段落顺序**，也就是玩家打开文件看到的顺序：
         // 本文件里唯一决定"段落排布"的地方就是这里，别在别处找。
-        // 按「玩家的武器 → 玩家从恨意值拿到的增益」排。
+        // 按「冰霜武器 → 冰霜的共用机制与对策 → 另一套武器体系 → 增益」排。
+        // 加段或改段名时，下面写进 toml 的那张段落清单必须同步，否则玩家看到的索引就是错的。
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
 
         // 写进 toml 文件开头的总说明。类注释里那张表玩家看不到（那只在源码里），
@@ -69,19 +100,33 @@ public final class SporeAddPlayerConfig {
                 "",
                 "这一份管「让玩家更强、更好用」的东西。",
                 "让真菌更强的那些在另一份文件里：spore_add-fungus-common.toml",
+                "还有一份调试用的 spore_add-debug-common.toml（默认全关的检查点），不属于上面那条分类。",
                 "（真菌加强、恨意值系统、世界恨意值给真菌的减伤、资源、真菌袭击）",
                 "",
-                "本文件的段落：",
-                "  frostNova      冰霜新星：长按右键蓄力的冰系武器",
-                "  liquidCold     液态寒冷：这种流体的影响半径",
-                "  frostSigh      冰雪的叹息：核弹方块",
-                "  playerBuffs    恨意值给玩家的增益（攻击力 / 防御力 / 幸运值 / 减伤 / 最终伤害）",
+                "本文件的段落（按下面的顺序排列）：",
+                "  frostNova        冰霜新星：长按右键蓄力的冰系武器",
+                "      frostNova.secondary   首次爆炸后冰球变成的延时炸弹",
+                "  frostSigh        冰雪的叹息：核弹方块",
+                "      frostSigh.spike       它长出来的冰刺地形",
+                "  mistClear       冰雾的持续清理——上面两件武器爆发后那团雾共用的机制",
+                "  liquidCold       液态寒冷：影响半径与冰扩散",
+                "  coolant          冷却液：它能把冻伤推到几层（封顶）",
+                "  frostbite        冻伤层数机制——上面四件武器全部共用这一组数值",
+                "  warmth           烈阳附魔：按件削弱冻伤",
+                "  combustion       可燃 / 爆燃：高能燃料那一套",
+                "  playerBuffs      恨意值给玩家的增益（攻击力 / 防御力 / 幸运值 / 减伤 / 最终伤害）",
                 "",
-                "改动在重启游戏、或执行 /reload 之后生效。");
+                "改动在重启游戏、或执行 /reload 之后生效。",
+                "完整的数值表与计算公式见随 jar 分发的 docs/values-and-formulas.md。");
 
         FROST_NOVA = new FrostNova(builder);
-        LIQUID_COLD = new LiquidCold(builder);
         FROST_SIGH = new FrostSigh(builder);
+        MIST_CLEAR = new MistClear(builder);
+        LIQUID_COLD = new LiquidCold(builder);
+        COOLANT = new Coolant(builder);
+        FROSTBITE = new Frostbite(builder);
+        WARMTH = new Warmth(builder);
+        COMBUSTION = new Combustion(builder);
         PLAYER_BUFFS = new PlayerBuffs(builder);
         SPEC = builder.build();
     }
@@ -149,7 +194,7 @@ public final class SporeAddPlayerConfig {
 
     /** 一次爆炸那团霜雾的持续 tick 数。 */
     public static int frostNovaPrimaryCloudTicks() {
-        return FROST_NOVA.primaryCloudSeconds.get() * 20;
+        return FROST_NOVA.cloudSeconds.get() * 20;
     }
 
     /** 二次爆炸的冰雾持续 tick 数。 */
@@ -204,21 +249,6 @@ public final class SporeAddPlayerConfig {
      */
     public static int scaledByPower(int max, double power) {
         return Math.max(1, (int) Math.round(max * powerFactor(power)));
-    }
-
-    // ------------------------------------------------------------------
-    // 液态寒冷
-    // ------------------------------------------------------------------
-
-    /**
-     * 液态寒冷的影响半径（格）。
-     *
-     * <p><b>区域寒冷效果、冰扩散、以及"范围内的冰不融化"必须用同一个半径</b>，
-     * 否则"能看到冰的地方"与"会被冻的地方"就不再是同一片区域。所以
-     * {@code LiquidColdBlock} 与 {@code FrozenChunks} 都从这里取值，不再各自持有常量。
-     */
-    public static int liquidColdRadius() {
-        return LIQUID_COLD.radius.get();
     }
 
     // ------------------------------------------------------------------
@@ -308,6 +338,202 @@ public final class SporeAddPlayerConfig {
         return Math.max(1, FROST_SIGH.mushroomSeconds.get() * 20);
     }
 
+    /** 圆盘内每个流体源变成液态寒冷的概率。 */
+    public static double frostSighSourceToLiquidColdChance() {
+        return FROST_SIGH.sourceToLiquidColdChance.get();
+    }
+
+    /** 铺三层冰的相对半径分界（小于它一律三层）。 */
+    public static double frostSighFullLayersUntil() {
+        return FROST_SIGH.fullLayersUntil.get();
+    }
+
+    /** 铺两层冰的相对半径分界（到它之前两层，再往外一层）。低于上一层分界时会被抬平。 */
+    public static double frostSighTwoLayersUntil() {
+        return Math.max(frostSighFullLayersUntil(), FROST_SIGH.twoLayersUntil.get());
+    }
+
+    /** 冰刺能长到多外（相对半径）。 */
+    public static double frostSighSpikeMaxRelativeRadius() {
+        return Math.max(0.01D, FROST_SIGH.spikeMaxRelativeRadius.get());
+    }
+
+    /** 低于这个高度干脆不长冰刺。 */
+    public static int frostSighSpikeMinHeight() {
+        return FROST_SIGH.spikeMinHeight.get();
+    }
+
+    /** 冰刺山尖的格子边长（格）。 */
+    public static int frostSighSpikeCellSize() {
+        return Math.max(1, FROST_SIGH.spikeCellSize.get());
+    }
+
+    /** 多少个格子里长一个山尖。越小越密。 */
+    public static int frostSighSpikeRarity() {
+        return Math.max(1, FROST_SIGH.spikeRarity.get());
+    }
+
+    /** 单根冰刺的底面半径（格）。 */
+    public static int frostSighSpikeBaseRadius() {
+        return Math.max(1, FROST_SIGH.spikeBaseRadius.get());
+    }
+
+    /** 正中心最高那根冰刺的高度（格）。 */
+    public static int frostSighSpikeMaxHeight() {
+        return Math.max(0, FROST_SIGH.spikeMaxHeight.get());
+    }
+
+    // ------------------------------------------------------------------
+    // 冰雾的持续清理
+    // ------------------------------------------------------------------
+
+    /** 冰雾是否在存续期间持续清理真菌方块。 */
+    public static boolean mistClearEnabled() {
+        return MIST_CLEAR.enabled.get();
+    }
+
+    /** 冰雾每隔多少 tick 清理一次。至少 1。 */
+    public static int mistClearIntervalTicks() {
+        return Math.max(1, MIST_CLEAR.intervalTicks.get());
+    }
+
+    /**
+     * 核弹的冰雾里，一道环从中心推到边缘要多少秒。
+     *
+     * <p>只对<b>核弹</b>有意义——冰霜新星那团雾是个小球，每次整球清一遍，不受本项影响。
+     *
+     * <p>它是那一段真正的性能旋钮：整个圆盘约 2000 万格，摊到多少秒上就是每 tick 多少格。
+     */
+    public static int mistClearPulseSeconds() {
+        return Math.max(1, MIST_CLEAR.pulseSeconds.get());
+    }
+
+    /** 核弹的冰雾里，两道环之间歇多少秒。0 表示一道推完立刻接下一道。 */
+    public static int mistClearPulseIdleSeconds() {
+        return Math.max(0, MIST_CLEAR.pulseIdleSeconds.get());
+    }
+
+    // ------------------------------------------------------------------
+    // 液态寒冷
+    // ------------------------------------------------------------------
+
+    /**
+     * 液态寒冷的影响半径（格）。
+     *
+     * <p><b>区域寒冷效果、冰扩散、以及"范围内的冰不融化"必须用同一个半径</b>，
+     * 否则"能看到冰的地方"与"会被冻的地方"就不再是同一片区域。所以
+     * {@code LiquidColdBlock} 与 {@code FrozenChunks} 都从这里取值，不再各自持有常量。
+     */
+    public static int liquidColdRadius() {
+        return LIQUID_COLD.radius.get();
+    }
+
+    /** 每个液态寒冷源头每秒做多少次冰扩散取样。 */
+    public static int liquidColdSpreadAttemptsPerSecond() {
+        return Math.max(1, LIQUID_COLD.spreadAttemptsPerSecond.get());
+    }
+
+    /** 每次取样成功替换方块的按概率。 */
+    public static double liquidColdSpreadSuccessChance() {
+        return LIQUID_COLD.spreadSuccessChance.get();
+    }
+
+    // ------------------------------------------------------------------
+    // 冷却液
+    // ------------------------------------------------------------------
+
+    /**
+     * 冷却液能把冻伤推到多少<b>显示层数</b>（= amplifier + 1）。
+     *
+     * <p><b>只封顶"涨"</b>：它不会压低从液态寒冷带过来的更高层数，
+     * 所以冷却液在这个体系里的角色是"弱化源"而不是"解毒剂"。
+     */
+    public static int coolantFrostbiteCap() {
+        return Math.max(1, COOLANT.frostbiteCap.get());
+    }
+
+    // ------------------------------------------------------------------
+    // 冻伤层数机制（所有冰霜来源共用）
+    // ------------------------------------------------------------------
+
+    /**
+     * 本模组施加的冻伤持续多少 tick。
+     *
+     * <p>只在<b>我们</b>调 {@code FrostbiteLevels#add} 时用得上：vanilla 在 amplifier 相同时
+     * 取时长更长的一方，所以调小不会削弱 Spore 自己给的冻伤，只影响"离开冷源后多久自然退完"。
+     */
+    public static int frostbiteDurationTicks() {
+        return Math.max(1, FROSTBITE.durationTicks.get());
+    }
+
+    /** 两次涨层之间的最短间隔（tick）。多个冷源重叠时靠它保证"每秒最多 +1"。 */
+    public static int frostbiteMinIntervalTicks() {
+        return Math.max(1, FROSTBITE.minIntervalTicks.get());
+    }
+
+    /** 每满一档附加的最大生命比例（加进 Spore 那一次冻结伤害）。 */
+    public static double frostbiteMaxHealthBonusPerTenLevels() {
+        return FROSTBITE.maxHealthBonusPerTenLevels.get();
+    }
+
+    /** 多少层算一档。它是除数，所以下限锁 1。 */
+    public static int frostbiteLevelsPerBonusTier() {
+        return Math.max(1, FROSTBITE.levelsPerBonusTier.get());
+    }
+
+    // ------------------------------------------------------------------
+    // 烈阳附魔：按件削弱冻伤
+    // ------------------------------------------------------------------
+
+    /** 每件「烈阳」抵消的冻伤比例。四件叠满即全免。 */
+    public static double warmthFrostbiteImmunityPerPiece() {
+        return WARMTH.frostbiteImmunityPerPiece.get();
+    }
+
+    /**
+     * 「烈阳」加速细雪冻结消退时，假设的 vanilla 每 tick 衰减量。
+     *
+     * <p><b>它必须等于原版实际的 2</b>（见 {@code aiStep} 里那个 {@code Math.max(0, i - 2)}）。
+     * 这一项不改原版行为，只改我们"补零头"时用的基准——填错会让长期均值公式失真。
+     */
+    public static int warmthFrostDecayPerTick() {
+        return Math.max(0, WARMTH.frostDecayPerTick.get());
+    }
+
+    /** 补发零头的周期（tick）。它是取模的模数，下限锁 1。 */
+    public static int warmthMeltTopUpPeriodTicks() {
+        return Math.max(1, WARMTH.meltTopUpPeriodTicks.get());
+    }
+
+    // ------------------------------------------------------------------
+    // 可燃 / 爆燃
+    // ------------------------------------------------------------------
+
+    /** 「可燃」buff 的持续 tick 数。 */
+    public static int combustionIgnitableDurationTicks() {
+        return Math.max(1, COMBUSTION.ignitableDurationTicks.get());
+    }
+
+    /** 「爆燃」buff 的持续 tick 数。每次触发刷回满值。 */
+    public static int combustionDeflagrationDurationTicks() {
+        return Math.max(1, COMBUSTION.deflagrationDurationTicks.get());
+    }
+
+    /** 每层爆燃附加的固定火焰伤害点数。 */
+    public static double combustionFireDamagePerStack() {
+        return COMBUSTION.fireDamagePerStack.get();
+    }
+
+    /** 每满一档爆燃附加的最大生命比例。 */
+    public static double combustionMaxHealthBonusPerTenStacks() {
+        return COMBUSTION.maxHealthBonusPerTenStacks.get();
+    }
+
+    /** 多少层爆燃算一档。它是除数，所以下限锁 1。 */
+    public static int combustionStacksPerBonusTier() {
+        return Math.max(1, COMBUSTION.stacksPerBonusTier.get());
+    }
+
     // ------------------------------------------------------------------
     // 恨意值给玩家的增益
     // ------------------------------------------------------------------
@@ -371,6 +597,7 @@ public final class SporeAddPlayerConfig {
     /** 冰霜新星那一段。 */
     private static final class FrostNova {
 
+        // 主表
         private final ForgeConfigSpec.IntValue blockRadius;
         private final ForgeConfigSpec.IntValue entityRadius;
         private final ForgeConfigSpec.DoubleValue explosionPower;
@@ -381,19 +608,30 @@ public final class SporeAddPlayerConfig {
         private final ForgeConfigSpec.IntValue minChargeTicks;
         private final ForgeConfigSpec.DoubleValue speedPerTick;
         private final ForgeConfigSpec.IntValue autoDetonateSeconds;
+        private final ForgeConfigSpec.IntValue cloudSeconds;
+
+        // [frostNova.secondary] —— 这里的字段名保留 secondary 前缀，只是为了不与主表那个
+        // cloudSeconds 撞名；它们在 toml 里的键名是去掉前缀的（表名已经表达了那层意思）。
         private final ForgeConfigSpec.IntValue secondaryDelaySeconds;
-        private final ForgeConfigSpec.IntValue primaryCloudSeconds;
         private final ForgeConfigSpec.IntValue secondaryCloudSeconds;
         private final ForgeConfigSpec.DoubleValue secondaryRangeMultiplier;
         private final ForgeConfigSpec.DoubleValue secondaryPowerMultiplier;
 
         private FrostNova(ForgeConfigSpec.Builder builder) {
-            builder.comment("冰霜新星（物品与它的投射物）").push("frostNova");
+            builder.comment("冰霜新星（物品与它的投射物）：长按右键蓄力，松手扔出一枚直线飞行的弹体。",
+                            "所有威力参数都随蓄力**线性**缩放，最低蓄力时只有满蓄力的 minPowerFraction 倍",
+                            "（见 accessor 里的 powerFactor——曲线只有一处，所以不会出现「半径涨得比层数快」）。")
+                    .push("frostNova");
 
             this.blockRadius = builder
                     .comment("满蓄力时，落点处被替换成冰的球半径（格）。1 ~ 16。",
                             "内半半径换蓝冰、其余换浮冰；不可破坏的方块（基岩等）永远不换。")
                     .defineInRange("blockRadius", 4, 1, 16);
+
+            this.entityRadius = builder
+                    .comment("满蓄力时，落点处被施加冻伤的实体球半径（格）。1 ~ 32。",
+                            "这个半径只作用于实体，与换方块的 blockRadius 各管各的。")
+                    .defineInRange("entityRadius", 12, 1, 32);
 
             this.explosionPower = builder
                     .comment("满蓄力时的爆炸强度。原版 TNT 是 4.0，默认 8.0 即 TNT 的两倍。0 ~ 32。",
@@ -402,11 +640,6 @@ public final class SporeAddPlayerConfig {
                             "和其它威力参数一样随蓄力缩放：最低蓄力只有它的 minPowerFraction 倍。",
                             "填 0 表示不产生爆炸（伤害、击退、爆炸音效都没有，其它效果照常）。")
                     .defineInRange("explosionPower", 8.0D, 0.0D, 32.0D);
-
-            this.entityRadius = builder
-                    .comment("满蓄力时，落点处被施加冻伤的实体球半径（格）。1 ~ 32。",
-                            "这个半径只作用于实体，与换方块的 blockRadius 各管各的。")
-                    .defineInRange("entityRadius", 12, 1, 32);
 
             this.frostbiteSeconds = builder
                     .comment("满蓄力时冻伤的持续秒数。1 ~ 600。")
@@ -444,33 +677,47 @@ public final class SporeAddPlayerConfig {
                             "它防的是弹体飞出已加载区块后原地冻结、越积越多（见访问器上的说明）。")
                     .defineInRange("autoDetonateSeconds", 5, 1, 60);
 
-            this.secondaryDelaySeconds = builder
-                    .comment("首次爆炸后，冰球变成的延时炸弹在多少秒后二次引爆。1 ~ 600。",
-                            "二次引爆会把那批冰清掉（变成空气），所以地表不会永久留着一个冰球。")
-                    .defineInRange("secondaryDelaySeconds", 30, 1, 600);
-
-            this.primaryCloudSeconds = builder
-                    .comment("一次爆炸那团霜雾持续多少秒。1 ~ 600。",
+            this.cloudSeconds = builder
+                    .comment("一次爆炸那团霜雾持续多少秒。1 ~ 600，默认 10。",
+                            "它在主表里就是「这团雾」，不必再带 primary 前缀——",
+                            "二次爆炸那团在下面的子表里，两边一眼能分清。",
                             "注意它和雾里冻伤的持续时间是两回事：冻伤时长由 frostbiteSeconds 决定。")
-                    .defineInRange("primaryCloudSeconds", 10, 1, 600);
+                    .defineInRange("cloudSeconds", 10, 1, 600);
 
-            this.secondaryCloudSeconds = builder
-                    .comment("二次爆炸的冰雾持续多少秒。1 ~ 600。默认 20，比一次爆炸的 10 秒更长——",
-                            "二次爆炸范围更大，雾也该留得更久一点才撑得住。",
-                            "注意它和冰雾里冻伤的持续时间是两回事：冻伤时长由 secondaryPowerMultiplier 那一项决定。")
-                    .defineInRange("secondaryCloudSeconds", 20, 1, 600);
+            // ------------------------------------------------------------------
+            // frostNova.secondary —— 首次爆炸后冰球变成的延时炸弹
+            // ------------------------------------------------------------------
+            // 单独成表，与访问器区里那块独立的「二次爆炸」注释对齐。
+            // 它是一整套独立的效果（延时、范围、强度、雾），有自己的四个旋钮。
+            builder.comment("二次爆炸：首次爆炸后，落点那团冰会变成一个延时炸弹，到点再炸一次。",
+                            "**它不产生任何伤害**，只放大范围与冻伤强度——所以「加强二次爆炸」",
+                            "就是加强冻伤，不会让它变成第二颗炸弹。",
+                            "二次引爆会把那批冰清掉（变成空气），所以地表不会永久留着一个冰球。")
+                    .push("secondary");
+
+            this.secondaryDelaySeconds = builder
+                    .comment("首次爆炸后多少秒二次引爆。1 ~ 600，默认 30。")
+                    .defineInRange("delaySeconds", 30, 1, 600);
 
             this.secondaryRangeMultiplier = builder
-                    .comment("二次爆炸的影响范围倍率。1.0 ~ 4.0。",
+                    .comment("影响范围倍率。1.0 ~ 4.0，默认 2.0。",
                             "只放大**范围**——冰雾与冻伤的半径；二次爆炸不产生任何伤害，",
                             "所以这里调多大都不会让伤害变高。")
-                    .defineInRange("secondaryRangeMultiplier", 2.0D, 1.0D, 4.0D);
+                    .defineInRange("rangeMultiplier", 2.0D, 1.0D, 4.0D);
 
             this.secondaryPowerMultiplier = builder
-                    .comment("二次爆炸的冻伤强度倍率：层数与秒数一起乘。1.0 ~ 5.0。",
+                    .comment("冻伤强度倍率：层数与秒数一起乘。1.0 ~ 5.0，默认 1.5。",
                             "填 1.0 就是「只有范围变大、强度不变」。",
                             "层数会被夹到 127 上限（amplifier 的字节限制），超出部分不生效。")
-                    .defineInRange("secondaryPowerMultiplier", 1.5D, 1.0D, 5.0D);
+                    .defineInRange("powerMultiplier", 1.5D, 1.0D, 5.0D);
+
+            this.secondaryCloudSeconds = builder
+                    .comment("冰雾持续多少秒。1 ~ 600，默认 20。",
+                            "刻意比一次爆炸的 10 秒更长：二次爆炸范围更大，雾也该留得更久才撑得住。",
+                            "注意它和冰雾里冻伤的持续时间是两回事：冻伤时长由 powerMultiplier 那一项决定。")
+                    .defineInRange("cloudSeconds", 20, 1, 600);
+
+            builder.pop();
 
             builder.pop();
         }
@@ -494,6 +741,17 @@ public final class SporeAddPlayerConfig {
         private final ForgeConfigSpec.IntValue iceMeltSeconds;
         private final ForgeConfigSpec.IntValue mushroomSeconds;
         private final ForgeConfigSpec.IntValue secondRingDelaySeconds;
+        private final ForgeConfigSpec.DoubleValue sourceToLiquidColdChance;
+        private final ForgeConfigSpec.DoubleValue fullLayersUntil;
+        private final ForgeConfigSpec.DoubleValue twoLayersUntil;
+
+        // [frostSigh.spike] —— 冰刺地形那一组
+        private final ForgeConfigSpec.DoubleValue spikeMaxRelativeRadius;
+        private final ForgeConfigSpec.IntValue spikeMinHeight;
+        private final ForgeConfigSpec.IntValue spikeCellSize;
+        private final ForgeConfigSpec.IntValue spikeRarity;
+        private final ForgeConfigSpec.IntValue spikeBaseRadius;
+        private final ForgeConfigSpec.IntValue spikeMaxHeight;
 
         private FrostSigh(ForgeConfigSpec.Builder builder) {
             builder.comment("冰雪的叹息（核弹方块）").push("frostSigh");
@@ -503,6 +761,25 @@ public final class SporeAddPlayerConfig {
                             "圆盘内的 (x,z) 列数按 π·r² 增长：半径 128 是 51,433 列、跨约 226 个区块。",
                             "调大它会让冲击环每 tick 要处理的列数成平方增长。")
                     .defineInRange("radius", 128, 1, 256);
+
+            this.sourceToLiquidColdChance = builder
+                    .comment("圆盘内每个**流体源**变成液态寒冷的概率。0.0 ~ 1.0，默认 0.01（1%）。",
+                            "只对源头生效，流动的流体格只冻成冰——否则一片海会整片变成液态寒冷，",
+                            "而液态寒冷又会往外扩散，等于一发核弹把整片水体变成会传染的冷源。")
+                    .defineInRange("sourceToLiquidColdChance", 0.01D, 0.0D, 1.0D);
+
+            this.fullLayersUntil = builder
+                    .comment("铺三层冰的相对半径分界。0.0 ~ 1.0，默认 0.75。",
+                            "相对半径小于它就一律铺 3 层，调小会让「薄冰区」提前出现、观感变成「没铺满」。",
+                            "**注意层数本身（3/2/1）是写死的**：本项与下面那条只改「在哪变薄」，",
+                            "不改「变到几层」——别指望靠它们铺出四层或两层平的冰。")
+                    .defineInRange("fullLayersUntil", 0.75D, 0.0D, 1.0D);
+
+            this.twoLayersUntil = builder
+                    .comment("铺两层冰的相对半径分界。0.0 ~ 1.0，默认 0.92。",
+                            "到它之前铺 2 层、再往外 1 层。**必须 >= fullLayersUntil**，",
+                            "否则分层顺序会反转（访问器里会把它抬平）。")
+                    .defineInRange("twoLayersUntil", 0.92D, 0.0D, 1.0D);
 
             this.shockwaveSeconds = builder
                     .comment("冲击环从中心扩散到边缘所需的秒数。1 ~ 300。",
@@ -584,6 +861,121 @@ public final class SporeAddPlayerConfig {
                             "隔一拍才铺开冰与霜。填 0 就是两环同时推。")
                     .defineInRange("secondRingDelaySeconds", 2, 0, 60);
 
+            // ------------------------------------------------------------------
+            // frostSigh.spike —— 冰刺地形
+            // ------------------------------------------------------------------
+            // 单独成表是因为它是一套**独立的地形生成算法**（一个 (x,z) 的纯函数），
+            // 六个键互相耦合（间距、密度、底面半径、最高），自成一组；
+            // 塞在主表里会让那 18 个键更长，也不好找。
+            builder.comment("冰刺：爆发后在地面上长出来的锥形冰柱。",
+                            "形状是 (x, z) 的纯函数（粗网格上的山尖 + 线性收锥），",
+                            "所以世界重载后不需要任何存表就能复原；爆心只作为一个盐，让每场爆发布局不同。")
+                    .push("spike");
+
+            this.spikeMaxRelativeRadius = builder
+                    .comment("冰刺能长到多外（相对半径）。0.01 ~ 1.0，默认 0.75。",
+                            "它是中心系数的**除数**（相对半径 ÷ 本项 = 由内向外的衰减进度），",
+                            "所以下限锁 0.01；填 0 会算出无穷高。",
+                            "调小 = 冰刺只集中在中心一小片，外围全是平冰面。")
+                    .defineInRange("maxRelativeRadius", 0.75D, 0.01D, 1.0D);
+
+            this.spikeMinHeight = builder
+                    .comment("低于这个高度干脆不长。0 ~ 320，默认 10（格）。",
+                            "**这一项是冰刺好不好看的关键**：圆锥算出来大多是三五格高的矮桩子，",
+                            "如果照单全收，地面会变成一片扎脚的碎冰而不是「冰刺之地」。",
+                            "调 0 = 满地矮桩子（那正是原本要避免的东西）。")
+                    .defineInRange("minHeight", 10, 0, 320);
+
+            this.spikeCellSize = builder
+                    .comment("冰刺山尖的格子边长（格）。1 ~ 64，默认 7。",
+                            "它是 floorDiv 的**除数**，下限锁 1。",
+                            "调小 = 山尖排得更密（更像一片林），调大 = 稀稀拉拉几根巨柱。")
+                    .defineInRange("cellSize", 7, 1, 64);
+
+            this.spikeRarity = builder
+                    .comment("多少个格子里长一个山尖。1 ~ 64，默认 2（约一半）。",
+                            "它是取模的**模数**，下限锁 1——**填 0 会直接抛 ArithmeticException 崩服**。",
+                            "调大 = 更稀疏（很多格子完全没有刺）。")
+                    .defineInRange("rarity", 2, 1, 64);
+
+            this.spikeBaseRadius = builder
+                    .comment("单根冰刺的底面半径（格）。1 ~ 32，默认 3。",
+                            "它是高度公式里的**除数**，下限锁 1。",
+                            "调小 = 更「针」（细而陡），调大 = 更「丘」（粗而缓）。")
+                    .defineInRange("baseRadius", 3, 1, 32);
+
+            this.spikeMaxHeight = builder
+                    .comment("正中心最高那根冰刺的高度（格）。0 ~ 320，默认 70。",
+                            "实际还会被世界高度上限截断（见 getMaxBuildHeight），",
+                            "所以填得比建筑高度还大没有意义。")
+                    .defineInRange("maxHeight", 70, 0, 320);
+
+            builder.pop();
+
+            builder.pop();
+        }
+    }
+
+    /**
+     * 冰雾的持续清理那一段。
+     *
+     * <p><b>冰霜新星与冰雪的叹息共用这一组数值</b>——两件武器爆发后都会留下一团雾，
+     * 而需求是"这团雾在消散之前持续产生与 CDU 一样的效果"。
+     *
+     * <h2>为什么是"持续"而不是"爆发时多清几遍"</h2>
+     * 爆发那一刻的清理是<b>一次性整片扫</b>的（见 {@code FungalClearing}），形状与雾一致。
+     * 但雾会存在 10 秒到 10 分钟，这期间被感染的地形还在长——只清一次的话，
+     * 雾还在飘、底下却已经重新长满，观感上"这雾没在做事"。
+     *
+     * <h2>为什么不用 CDU 的概率</h2>
+     * {@code FungalClearing} 的类注释里写着它刻意丢掉了 CDU 的概率（数据包表 20%、生物质 10%、落叶 20%），
+     * 理由是"新星是一次性爆发，照抄概率会留下 80% 的真菌方块"。这里沿用同一个决定：
+     * 一次扫到的就必定清掉，靠<b>反复经过</b>而不是靠概率把范围覆盖完。
+     */
+    private static final class MistClear {
+
+        private final ForgeConfigSpec.BooleanValue enabled;
+        private final ForgeConfigSpec.IntValue intervalTicks;
+        private final ForgeConfigSpec.IntValue pulseSeconds;
+        private final ForgeConfigSpec.IntValue pulseIdleSeconds;
+
+        private MistClear(ForgeConfigSpec.Builder builder) {
+            builder.comment("冰雾的持续清理：雾在消散之前一直按 CDU 的规则清真菌方块。",
+                            "「CDU 的规则」就是爆发那一下用的同一套（残骸→冰冻残骸、生物质→冻伤生物质、",
+                            "配置/数据包的转换表、以及最后兜底变空气），见 FungalClearing 的类注释。",
+                            "**形状与各自爆发一致**：冰霜新星那团雾是个小球，每次整球清一遍；",
+                            "冰雪的叹息那团铺在圆盘上，**每隔一段时间从中心推出一道可见的环**，",
+                            "环推到哪就清到哪。")
+                    .push("mistClear");
+
+            this.enabled = builder
+                    .comment("总开关。默认开。关掉 = 雾只剩粒子与冻伤，不再清方块（回到改动之前的行为）。")
+                    .define("enabled", true);
+
+            this.intervalTicks = builder
+                    .comment("每隔多少 tick 清一次。1 ~ 200，默认 20（1 秒）。",
+                            "**对冰霜新星而言这是性能旋钮**：它每次要扫整个球",
+                            "（半径 10 时约 4 千个方块，半径 32 时约 13 万）。",
+                            "**对冰雪的叹息而言本项只决定环的推进精度**——那边是逐 tick 沿环带推的，",
+                            "每一步都很窄，所以调大它只会让环一顿一顿的，不会更省。")
+                    .defineInRange("intervalTicks", 20, 1, 200);
+
+            this.pulseSeconds = builder
+                    .comment("冰雪的叹息：一道环从中心推到边缘要多少秒。1 ~ 600，默认 60。",
+                            "**这是那一段真正的性能旋钮**：整盘 5 万列 × 每列 384 格高 ≈ 2000 万格，",
+                            "摊到多少秒上，每 tick 就要处理 2000万 ÷ (秒 × 20) 格。",
+                            "60 秒约 16k 格/tick——比爆发时那道 2 号环（20 秒扫完同样这些格子，约 49k/tick）更轻。",
+                            "**调得太小会明显卡**：10 秒就是约 100k 格/tick。",
+                            "调大则环推得从容，但同一段时间内覆盖全盘的遍数变少。")
+                    .defineInRange("pulseSeconds", 60, 1, 600);
+
+            this.pulseIdleSeconds = builder
+                    .comment("两道环之间歇多少秒（上一道推完之后算起）。0 ~ 600，默认 30。",
+                            "填 0 = 一道推完立刻接下一道，整段时间连绵不断地推。",
+                            "**间隔越长，两次清理之间留给真菌再长的时间就越长**——",
+                            "这是「看得见的稀有事件」与「地面一直干净」之间的取舍。")
+                    .defineInRange("pulseIdleSeconds", 30, 0, 600);
+
             builder.pop();
         }
     }
@@ -592,18 +984,208 @@ public final class SporeAddPlayerConfig {
     private static final class LiquidCold {
 
         private final ForgeConfigSpec.IntValue radius;
+        private final ForgeConfigSpec.IntValue spreadAttemptsPerSecond;
+        private final ForgeConfigSpec.DoubleValue spreadSuccessChance;
 
         private LiquidCold(ForgeConfigSpec.Builder builder) {
-            builder.comment("液态寒冷").push("liquidCold");
+            builder.comment("液态寒冷：影响半径，以及它往外冻的速度。").push("liquidCold");
 
             this.radius = builder
                     .comment("液态寒冷的影响半径（格）。1 ~ 16。",
                             "区域寒冷效果、冰扩散、以及范围内的原版冰不融化共用这一个半径，",
                             "所以改它就是同时改这三件事——它们本来就该是同一片区域。",
-                            "上限 16 是冰扩散的取样密度决定的：它每秒只在球的外接立方体里随机取 16 个点，",
+                            "上限 16 是冰扩散的取样密度决定的：它每秒只在球的外接立方体里随机取若干个点，",
                             "半径越大球内占比越低（半径 6 约 52%，半径 16 只剩约 12%），再大就几乎抽不到点、",
                             "扩散形同停止。范围判定本身没有这个限制（FrozenChunks 的区块窗口是跟着半径算的）。")
                     .defineInRange("radius", 8, 1, 16);
+
+            this.spreadAttemptsPerSecond = builder
+                    .comment("每个源头方块每秒做多少次冰扩散取样。1 ~ 256，默认 16。",
+                            "这是扩散速度**唯一**的数量旋钮：取样次数多，才更容易探到球内的点。",
+                            "它同时也是这一段的主要开销来源——次数翻倍，每秒的方块查询就翻倍。",
+                            "下限锁 1：填 0 会让扩散彻底停摆，那不是「慢」，是「永远不扩散」，",
+                            "而玩家只会以为流体坏了。想关掉扩散请把 spreadSuccessChance 填 0——",
+                            "那个至少语义清楚。")
+                    .defineInRange("spreadAttemptsPerSecond", 16, 1, 256);
+
+            this.spreadSuccessChance = builder
+                    .comment("每次取样成功替换方块的**概率**。0.0 ~ 1.0，默认 0.5。",
+                            "**空气、流体、固体共用这一个值**：三种目标没有各自的优先级或独立概率，",
+                            "\"空气先被换掉\"是取样落点分布的自然结果，不是写死的规则。",
+                            "所以改它同时改变三类的相对速度，不会出现\"冰长得快但空气冻不上\"这种事。",
+                            "填 0 = 只影响范围（失温与冻伤照旧），但不再长冰。")
+                    .defineInRange("spreadSuccessChance", 0.5D, 0.0D, 1.0D);
+
+            builder.pop();
+        }
+    }
+
+    /**
+     * 冷却液那一段。
+     *
+     * <p>冷却液本身很简单（像细雪一样失温并叠冻伤），唯一值得调的就是它<b>能把冻伤推到几层</b>——
+     * 它是四种冰霜来源里最弱的一个，所以单独给它一个封顶。
+     */
+    private static final class Coolant {
+
+        private final ForgeConfigSpec.IntValue frostbiteCap;
+
+        private Coolant(ForgeConfigSpec.Builder builder) {
+            builder.comment("冷却液：它能把冻伤推到几层为止。").push("coolant");
+
+            this.frostbiteCap = builder
+                    .comment("冷却液能把冻伤推到的**显示层数**上限（= amplifier + 1）。1 ~ 127，默认 10。",
+                            "**只封顶「涨」、不压低已有的层数**：从液态寒冷（可能几十层）走进冷却液时，",
+                            "层数原样保留、只是不再往上加。所以它是「弱化源」而不是「解毒剂」。",
+                            "上限 127 是 amplifier 的字节同步硬限（层数 = amplifier + 1），再高也不会生效。",
+                            "填 1 = 泡在里面也不再叠冻伤（但失温与减速照旧）。")
+                    .defineInRange("frostbiteCap", 10, 1, 127);
+
+            builder.pop();
+        }
+    }
+
+    /**
+     * 冻伤层数机制那一段。<b>四种冰霜来源全部共用这一组数值</b>。
+     *
+     * <p>它原先是 {@code FrostbiteLevels} 里的私有常量，提到配置里是因为
+     * "冻伤每层打多少伤害"是玩家最想调、也最该能调的一项。
+     */
+    private static final class Frostbite {
+
+        private final ForgeConfigSpec.IntValue durationTicks;
+        private final ForgeConfigSpec.IntValue minIntervalTicks;
+        private final ForgeConfigSpec.DoubleValue maxHealthBonusPerTenLevels;
+        private final ForgeConfigSpec.IntValue levelsPerBonusTier;
+
+        private Frostbite(ForgeConfigSpec.Builder builder) {
+            builder.comment("冻伤层数机制：本 mod 施加的冻伤持续多久、涨得多快、每层打多少伤害。",
+                            "**冷却液、液态寒冷、冰霜新星、冰雪的叹息全部走这一组数值**，",
+                            "所以调它就是同时调这四件武器——它们本来就该是同一套冻伤。")
+                    .push("frostbite");
+
+            this.durationTicks = builder
+                    .comment("本模组施加的冻伤持续多少 tick。20 ~ 2400，默认 240（12 秒）。",
+                            "Spore 自己用的是 600 / 1200 tick，而 vanilla 在 amplifier 相同时取更长的一方，",
+                            "所以这一项**不会削弱 Spore 自己的冻伤**：泡在冷源里被我们每秒刷新到本项时长，",
+                            "一旦离开就按本项自然倒数。",
+                            "调短 = 离开冷源后冻伤退得更快（对手更难受、你自己也更容易解脱）。")
+                    .defineInRange("durationTicks", 240, 20, 2400);
+
+            this.minIntervalTicks = builder
+                    .comment("两次涨层之间的最短间隔（tick）。1 ~ 200，默认 20（每秒最多 +1 层）。",
+                            "多个冷源重叠时（比如同时泡在液态寒冷里又被冰霜新星打中）靠它限速——",
+                            "没有它的话同一 tick 里几个来源各加一层，层数会瞬间堆满。",
+                            "调小 = 泡在冷源里涨得更快、上限到得更早。")
+                    .defineInRange("minIntervalTicks", 20, 1, 200);
+
+            this.maxHealthBonusPerTenLevels = builder
+                    .comment("每满一档额外附加的最大生命比例。0.0 ~ 1.0，默认 0.02（2%）。",
+                            "它是**加进 Spore 那一次冻结伤害**里的（调用方用 setAmount），",
+                            "所以照常吃护甲、抗性与无敌帧，不会打出第二跳。",
+                            "不足一档的零头不计——比如 19 层只算一档。")
+                    .defineInRange("maxHealthBonusPerTenLevels", 0.02D, 0.0D, 1.0D);
+
+            this.levelsPerBonusTier = builder
+                    .comment("多少层算一档。1 ~ 127，默认 10。",
+                            "**它是除数**（层数 ÷ 本项 = 档数），所以下限锁 1；填 0 会直接崩。",
+                            "调小 = 每一档来得更快（配合上一项就是「总加成更高」），",
+                            "调大则相反，但每层那 +1 点平伤不受本项影响。")
+                    .defineInRange("levelsPerBonusTier", 10, 1, 127);
+
+            builder.pop();
+        }
+    }
+
+    /**
+     * 「烈阳」附魔那一段：按件削弱冻伤。
+     *
+     * <p>它属于<b>玩家的对策</b>，与 {@link Frostbite} 正好是一对：那边管冻伤有多强，
+     * 这边管玩家能挡掉多少。
+     */
+    private static final class Warmth {
+
+        private final ForgeConfigSpec.DoubleValue frostbiteImmunityPerPiece;
+        private final ForgeConfigSpec.IntValue frostDecayPerTick;
+        private final ForgeConfigSpec.IntValue meltTopUpPeriodTicks;
+
+        private Warmth(ForgeConfigSpec.Builder builder) {
+            builder.comment("「烈阳」附魔：按件削弱冻伤。",
+                            "它管两件事：① 挡掉**新来**的冻伤（按件按比例缩小层数与时长）；",
+                            "② 让**已经吃到的**细雪冻结消退得更快（穿上护甲不会让已有的冻结刻数消失）。")
+                    .push("warmth");
+
+            this.frostbiteImmunityPerPiece = builder
+                    .comment("每件「烈阳」抵消的冻伤比例。0.0 ~ 1.0，默认 0.25（四件叠满即全免）。",
+                            "**影响所有冻伤来源**，不只核弹：冷却液、液态寒冷、Spore 自己的冻伤都按件削弱。",
+                            "改小 = 凑齐四件不再等于免疫，玩家得靠别的手段。")
+                    .defineInRange("frostbiteImmunityPerPiece", 0.25D, 0.0D, 1.0D);
+
+            this.frostDecayPerTick = builder
+                    .comment("原版每 tick 把冻结刻数减掉多少。0 ~ 20，默认 2。",
+                            "**这一项必须与 vanilla 实际的衰减量一致**（原版硬编码为 2，见 aiStep 里那个",
+                            "Math.max(0, i - 2)）。它不改原版行为，只改我们「补零头」时假设的基准——",
+                            "填错会让下面那条「每 tick 额外减 2×抗性」算出的长期均值失真。",
+                            "除非你同时改了原版，否则不要动它。")
+                    .defineInRange("frostDecayPerTick", 2, 0, 20);
+
+            this.meltTopUpPeriodTicks = builder
+                    .comment("补发零头的周期（tick）。1 ~ 20，默认 2。",
+                            "一件烈阳的抗性是 0.25，算出来的「额外衰减」是 2.5 这种非整数，",
+                            "而原版只认整数 tick——所以攒够一个整数的零头再补发一次。",
+                            "**它是取模的模数**，填 0 会崩，所以下限锁 1。调大 = 补发更迟、更不平滑。")
+                    .defineInRange("meltTopUpPeriodTicks", 2, 1, 20);
+
+            builder.pop();
+        }
+    }
+
+    /**
+     * 可燃 / 爆燃那一段（高能燃料那一套）。
+     *
+     * <p>它跟冰霜没有关系，是另一套元素体系，所以单独成段而不是塞进 frostSigh 或 frostbite。
+     */
+    private static final class Combustion {
+
+        private final ForgeConfigSpec.IntValue ignitableDurationTicks;
+        private final ForgeConfigSpec.IntValue deflagrationDurationTicks;
+        private final ForgeConfigSpec.DoubleValue fireDamagePerStack;
+        private final ForgeConfigSpec.DoubleValue maxHealthBonusPerTenStacks;
+        private final ForgeConfigSpec.IntValue stacksPerBonusTier;
+
+        private Combustion(ForgeConfigSpec.Builder builder) {
+            builder.comment("可燃 / 爆燃：高能燃料与 Spore 焦油那一套。",
+                            "链条是「泡在燃料里 → 积累 Spore 的【可燃】→ 可燃被触发时转化为本 mod 的【爆燃】」，",
+                            "爆燃按层放大火焰伤害，层数无上限。")
+                    .push("combustion");
+
+            this.ignitableDurationTicks = builder
+                    .comment("「可燃」buff 的持续 tick 数。20 ~ 2400，默认 200（10 秒）。",
+                            "高能燃料与 Spore 自己的焦油共用本项。vanilla 在 amplifier 相同时取更长的一方，",
+                            "所以默认的 200 会覆盖 Spore 焦油原本的 100 tick（5 秒）——",
+                            "泡在焦油里最终也是 10 秒，与泡在燃料里一致。")
+                    .defineInRange("ignitableDurationTicks", 200, 20, 2400);
+
+            this.deflagrationDurationTicks = builder
+                    .comment("「爆燃」buff 的持续 tick 数。20 ~ 2400，默认 200（10 秒）。",
+                            "每次重新触发都会把时长顶回满值，所以它是「离开火源后多久熄」，不是总时长。")
+                    .defineInRange("deflagrationDurationTicks", 200, 20, 2400);
+
+            this.fireDamagePerStack = builder
+                    .comment("每层爆燃附加的固定火焰伤害点数。0.0 ~ 100.0，默认 1.0。",
+                            "它与下面那条**相加之后**才进同一次伤害结算（调用方用 setAmount），",
+                            "所以会吃护甲、抗性与无敌帧，也不会产生第二次伤害或递归。")
+                    .defineInRange("fireDamagePerStack", 1.0D, 0.0D, 100.0D);
+
+            this.maxHealthBonusPerTenStacks = builder
+                    .comment("每满一档额外附加的最大生命比例。0.0 ~ 1.0，默认 0.01（1%）。",
+                            "不足一档的零头不计——比如 19 层只算一档。")
+                    .defineInRange("maxHealthBonusPerTenStacks", 0.01D, 0.0D, 1.0D);
+
+            this.stacksPerBonusTier = builder
+                    .comment("多少层算一档。1 ~ 127，默认 10。",
+                            "**它是除数**，下限锁 1；填 0 会直接崩。与 frostbite 段那一项是对称的。")
+                    .defineInRange("stacksPerBonusTier", 10, 1, 127);
 
             builder.pop();
         }

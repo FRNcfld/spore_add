@@ -80,5 +80,82 @@
       "minecraft:random/glass2",
       "minecraft:random/glass3"
     ]
+  },
+
+  "scavenger_ambient": {
+    "subtitle": "subtitles.spore_add.scavenger_ambient",
+    "sounds": [
+      "spore:growl",
+      "spore:growl2",
+      "spore:growl3",
+      "spore:growl4",
+      "spore:growl5"
+    ]
+  },
+  "scavenger_hurt": {
+    "subtitle": "subtitles.spore_add.scavenger_hurt",
+    "sounds": [
+      "spore:slash",
+      "spore:slash2"
+    ]
+  },
+  "scavenger_death": {
+    "subtitle": "subtitles.spore_add.scavenger_death",
+    "sounds": [
+      "spore:slash",
+      "spore:slash2"
+    ]
+  },
+  "scavenger_pickup": {
+    "subtitle": "subtitles.spore_add.scavenger_pickup",
+    "sounds": [
+      {
+        "name": "minecraft:random/pop",
+        "pitch": 1.8,
+        "volume": 0.8
+      }
+    ]
+  },
+  "scavenger_flee": {
+    "subtitle": "subtitles.spore_add.scavenger_flee",
+    "sounds": [
+      {
+        "name": "spore:growl2",
+        "pitch": 1.5
+      },
+      {
+        "name": "spore:growl3",
+        "pitch": 1.6
+      }
+    ]
+  },
+  "scavenger_step": {
+    "subtitle": "subtitles.spore_add.scavenger_step",
+    "sounds": [
+      {
+        "name": "minecraft:step/grass1",
+        "volume": 0.25
+      },
+      {
+        "name": "minecraft:step/grass2",
+        "volume": 0.25
+      },
+      {
+        "name": "minecraft:step/grass3",
+        "volume": 0.25
+      },
+      {
+        "name": "minecraft:step/grass4",
+        "volume": 0.25
+      },
+      {
+        "name": "minecraft:step/grass5",
+        "volume": 0.25
+      },
+      {
+        "name": "minecraft:step/grass6",
+        "volume": 0.25
+      }
+    ]
   }
 }

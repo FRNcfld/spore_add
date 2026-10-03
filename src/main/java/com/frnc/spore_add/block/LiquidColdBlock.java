@@ -52,12 +52,9 @@ public class LiquidColdBlock extends LiquidBlock {
     // 影响半径不在这里——它来自 SporeAddPlayerConfig#liquidColdRadius()，本类与 FrozenChunks 共用同一个值。
     // 是球形而不是立方体：范围判定按欧氏距离（见 FrozenChunks#isWithinRange），冰分层也按同一套距离
     // （见 #iceFor）。
-
-    /** 每个源头方块每秒的扩散尝试次数。 */
-    private static final int ATTEMPTS_PER_SECOND = 16;
-
-    /** 每次尝试的成功概率（各次独立）。 */
-    private static final double SUCCESS_CHANCE = 0.5;
+    // 扩散速率（每秒取样几次、每次多大成功率）同样来自配置，见 liquidCold 段的
+    // spreadAttemptsPerSecond / spreadSuccessChance —— 它们**只在方法里读**，不做成静态常量：
+    // 静态常量会在类初始化时定死，改配置就得重启。
 
     /** 调度刻周期：每秒一拍，冰扩散与范围登记都在这一拍里做。 */
     private static final int TICK_DELAY = 20;
@@ -168,9 +165,11 @@ public class LiquidColdBlock extends LiquidBlock {
      * （例如空气 70% / 流体 50% / 方块 30%），只需在这里按类别给不同的概率。
      */
     private static void spreadIce(ServerLevel level, BlockPos center, RandomSource random) {
-        // 一次读出来用整轮：半径配置中途被改的话，至少这一轮用的是同一个值
+        // 一次读出来用整轮：半径与速率配置中途被改的话，至少这一轮用的是同一组值
         int radius = SporeAddPlayerConfig.liquidColdRadius();
-        for (int attempt = 0; attempt < ATTEMPTS_PER_SECOND; attempt++) {
+        int attempts = SporeAddPlayerConfig.liquidColdSpreadAttemptsPerSecond();
+        double successChance = SporeAddPlayerConfig.liquidColdSpreadSuccessChance();
+        for (int attempt = 0; attempt < attempts; attempt++) {
             int dx = random.nextInt(radius * 2 + 1) - radius;
             int dy = random.nextInt(radius * 2 + 1) - radius;
             int dz = random.nextInt(radius * 2 + 1) - radius;
@@ -185,7 +184,7 @@ public class LiquidColdBlock extends LiquidBlock {
             if (!isReplaceable(level, target, false)) {
                 continue;
             }
-            if (random.nextDouble() >= SUCCESS_CHANCE) {
+            if (random.nextDouble() >= successChance) {
                 continue;
             }
             level.setBlock(target, iceFor(distance, radius), REPLACE_FLAGS);

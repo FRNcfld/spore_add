@@ -1,6 +1,7 @@
 package com.frnc.spore_add.effect;
 
 import com.frnc.spore_add.SporeAdd;
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.network.ModNetwork;
 
 import net.minecraft.world.effect.MobEffect;
@@ -19,8 +20,8 @@ public final class ModEffects {
     public static final DeferredRegister<MobEffect> EFFECTS =
             DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, SporeAdd.MOD_ID);
 
-    /** 爆燃持续时间：10 秒（需求 3）。每次重新触发都会刷回这个值。 */
-    public static final int DURATION_TICKS = 200;
+    // 爆燃持续时间来自配置（combustion.deflagrationDurationTicks，默认 200 = 10 秒），在 apply 里读。
+    // 每次重新触发都会把时长顶回满值。
 
     public static final RegistryObject<MobEffect> DEFLAGRATION =
             EFFECTS.register("deflagration", DeflagrationEffect::new);
@@ -47,7 +48,8 @@ public final class ModEffects {
             return;
         }
         BuffLevels.addDeflagration(entity, extraStacks);
-        entity.addEffect(new MobEffectInstance(DEFLAGRATION.get(), DURATION_TICKS, 0, false, true));
+        entity.addEffect(new MobEffectInstance(DEFLAGRATION.get(),
+                SporeAddPlayerConfig.combustionDeflagrationDurationTicks(), 0, false, true));
         // 层数不是 vanilla 同步的一部分，立刻补发一次，免得客户端要等下一个每秒 tick
         ModNetwork.syncLevels(entity);
     }

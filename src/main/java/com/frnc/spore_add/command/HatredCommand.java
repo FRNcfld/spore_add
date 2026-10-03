@@ -1,6 +1,5 @@
 package com.frnc.spore_add.command;
 
-import com.frnc.spore_add.SporeAdd;
 import com.frnc.spore_add.hatred.HatredData;
 import com.frnc.spore_add.hatred.HatredManager;
 import com.frnc.spore_add.hatred.HatredValues;
@@ -13,9 +12,6 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * {@code /spore_add hatred} —— 查看与调试恨意值。
@@ -29,51 +25,50 @@ import net.minecraftforge.fml.common.Mod;
  * 袭击触发是按档位来的（默认 500 一档），靠正常游玩去验证"越档掷骰"要杀很久。
  * {@code set} 让验收能一步跳到档位边界上。它需要权限等级 2（与 {@code /gamemode} 同级），
  * 所以不会变成普通玩家的作弊入口。
+ *
+ * <h2>它只造子树，不注册根</h2>
+ * 本类不再订阅 {@code RegisterCommandsEvent}：{@code /spore_add} 这个根字面量由
+ * {@link SporeAddCommands} 独占并统一挂载。{@link #build()} 返回的是 {@code hatred} 节点本身。
+ * 理由写在 {@link SporeAddCommands} 的类注释里。
  */
-@Mod.EventBusSubscriber(modid = SporeAdd.MOD_ID)
 public final class HatredCommand {
 
     private HatredCommand() {
     }
 
-    @SubscribeEvent
-    public static void onRegisterCommands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(build());
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> build() {
-        return Commands.literal("spore_add")
-                .then(Commands.literal("hatred")
-                        // 不带参数：看自己的
+    /** 造出 {@code hatred} 子树（不含 {@code /spore_add} 根），由 {@link SporeAddCommands} 挂上去。 */
+    static LiteralArgumentBuilder<CommandSourceStack> build() {
+        return Commands.literal("hatred")
+                // 不带参数：看自己的
+                .executes(context -> {
+                    ServerPlayer player = context.getSource().getPlayerOrException();
+                    show(context.getSource(), player);
+                    return 1;
+                })
+                // 带玩家：看别人的（需要权限，免得普通玩家去翻别人的数值）
+                .then(Commands.argument("player", EntityArgument.player())
+                        // 权限等级 2 = /gamemode 那一档。用字面量而不是 Commands.LEVEL_* 常量：
+                        // 那几个常量在 1.20.1 的映射里不叫这个名字（编译期已证伪），
+                        // 而"2 = 游戏管理员"是稳定的原版约定。
+                        .requires(source -> source.hasPermission(2))
                         .executes(context -> {
-                            ServerPlayer player = context.getSource().getPlayerOrException();
-                            show(context.getSource(), player);
+                            show(context.getSource(), EntityArgument.getPlayer(context, "player"));
                             return 1;
                         })
-                        // 带玩家：看别人的（需要权限，免得普通玩家去翻别人的数值）
-                        .then(Commands.argument("player", EntityArgument.player())
-                                // 权限等级 2 = /gamemode 那一档。用字面量而不是 Commands.LEVEL_* 常量：
-                                // 那几个常量在 1.20.1 的映射里不叫这个名字（编译期已证伪），
-                                // 而"2 = 游戏管理员"是稳定的原版约定。
-                                .requires(source -> source.hasPermission(2))
-                                .executes(context -> {
-                                    show(context.getSource(), EntityArgument.getPlayer(context, "player"));
-                                    return 1;
-                                })
-                                // set 子命令：调数值，用来把玩家推到档位边界上验证袭击
-                                .then(Commands.literal("set")
-                                        .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.0D))
-                                                .executes(context -> {
-                                                    ServerPlayer target = EntityArgument.getPlayer(context, "player");
-                                                    double amount = DoubleArgumentType.getDouble(context, "amount");
-                                                    HatredManager.set(target, amount);
-                                                    context.getSource().sendSuccess(
-                                                            () -> Component.translatable(
-                                                                    "command.spore_add.hatred.set",
-                                                                    target.getDisplayName(), format(amount)),
-                                                            true);
-                                                    return 1;
-                                                })))));
+                        // set 子命令：调数值，用来把玩家推到档位边界上验证袭击
+                        .then(Commands.literal("set")
+                                .then(Commands.argument("amount", DoubleArgumentType.doubleArg(0.0D))
+                                        .executes(context -> {
+                                            ServerPlayer target = EntityArgument.getPlayer(context, "player");
+                                            double amount = DoubleArgumentType.getDouble(context, "amount");
+                                            HatredManager.set(target, amount);
+                                            context.getSource().sendSuccess(
+                                                    () -> Component.translatable(
+                                                            "command.spore_add.hatred.set",
+                                                            target.getDisplayName(), format(amount)),
+                                                    true);
+                                            return 1;
+                                        }))));
     }
 
     /**

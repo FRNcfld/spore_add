@@ -1,5 +1,6 @@
 package com.frnc.spore_add.effect;
 
+import com.frnc.spore_add.SporeAddPlayerConfig;
 import com.frnc.spore_add.network.ModNetwork;
 
 import net.minecraft.nbt.CompoundTag;
@@ -118,7 +119,9 @@ public final class BuffLevels {
      * 所以护甲、抗性、吸收都会照常作用在这部分上，也不会产生第二次伤害或递归。
      */
     public static float fireDamageBonus(LivingEntity entity, int stacks) {
-        return stacks + (stacks / 10) * 0.01F * entity.getMaxHealth();
+        int tiers = stacks / SporeAddPlayerConfig.combustionStacksPerBonusTier();
+        return (float) (stacks * SporeAddPlayerConfig.combustionFireDamagePerStack()
+                + tiers * SporeAddPlayerConfig.combustionMaxHealthBonusPerTenStacks() * entity.getMaxHealth());
     }
 
     private static void put(LivingEntity entity, String key, int value) {
