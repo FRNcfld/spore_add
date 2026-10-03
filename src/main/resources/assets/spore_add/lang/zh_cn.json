@@ -20,6 +20,7 @@
   "advancements.spore_add.sun.description": "装备一件附有「烈阳」的护甲",
 
   "enchantment.spore_add.warmth": "烈阳",
+  "enchantment.spore_add.warmth.desc": "四格护甲每件提供 25% 冻伤抗性，叠满即完全免疫冻伤、冻结伤害与细雪冻结\n附魔在靴子上时不会陷入细雪\n整套穿戴可以以护甲崩碎为代价抵挡「冰雪的叹息」的一次攻击。",
 
   "effect.spore_add.deflagration": "爆燃",
   "effect.spore_add.deflagration.description": "每层都会放大你受到的火焰伤害",

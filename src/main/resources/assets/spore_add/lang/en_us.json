@@ -20,6 +20,7 @@
   "advancements.spore_add.sun.description": "Equip a piece of armor enchanted with Blazing Sun",
 
   "enchantment.spore_add.warmth": "Blazing Sun",
+  "enchantment.spore_add.warmth.desc": "Each piece of armour grants 25% frostbite resistance; a full set makes you immune to frostbite, freezing damage and powder snow.\nWorn on boots, you also stop sinking into powder snow.\nA full set can resist one hit from the Frost Sigh - at the cost of the armour shattering.",
 
   "effect.spore_add.deflagration": "Deflagration",
   "effect.spore_add.deflagration.description": "Each stack increases the fire damage you take",
