@@ -35,16 +35,32 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  *       所以没法"取第一个匹配"；</li>
  *   <li>{@code @Slice} 的 {@code to} 边界需要落在两个 20 之间（偏移 78~200），
  *       而那一段里全是原版调用（{@code SynchedEntityData.get/set}、{@code Integer.valueOf}），
- *       拿它们当 {@code @At} target 就必须 remap——而 {@code method} 写的是 Spore 的 {@code tick}，
- *       必须 remap=false。一个注解只有一个开关，覆盖不了两者（这就是本项目那条最反复的约束）。</li>
+ *       拿它们当 {@code @At} target 就必须 remap——而同一个注解里 {@code method} 也得 remap，
+ *       两者在这条路上是一致的，所以这条理由<b>不成立</b>（原先写的"method 必须 remap=false"
+ *       是判断错了，见下面那段）。真正挡住 {@code @ModifyConstant} 的只有上一条：没有 ordinal。</li>
  * </ul>
  * 按数值匹配又会两个 20 一起改，顺带把音效播放频率也乘 6——那是没人要的副作用。
  *
  * <p>所以改的是<b>唯一</b>那个读取点：{@code recontructor_clock} 这个 Forge 配置项的 {@code get()}。
- * Forge 自己的成员不参与重命名（见 {@code FungusColdMixin} 类注释里说的那条），
- * 所以 {@code ConfigValue.get()} 可以安全地用 {@code remap = false} 重定向；
+ * Forge 自己的成员不参与重命名，原版映射表里也没有它的条目，所以 remap 开着也不会动它；
  * {@code @Slice(from = GETFIELD recontructor_clock)} 之后，整个 {@code tick} 里只剩这一次
  * {@code ConfigValue.get()}，定位是唯一的。
+ *
+ * <h2>⚠️ {@code method = "tick"} 上绝不能写 {@code remap = false}</h2>
+ * 这里最初写的是 {@code remap = false}，理由记成了"注入的是 Spore 自己的方法"。<b>那是错的</b>：
+ * {@code tick} 是<b>原版 {@code Entity#tick} 的覆写</b>，生产环境会被重混淆成 {@code m_8119_}。
+ * 写了 {@code remap = false}，Mixin 就不查映射表、拿字面量 {@code tick} 去找目标，
+ * 而生产 jar 里根本没有叫 {@code tick} 的方法——<b>整合包启动时直接崩</b>：
+ * <pre>
+ *   InvalidInjectionException: Critical injection failure:
+ *   @Redirect annotation on sporeAdd$fasterHatchClock could not find any targets matching 'tick'
+ * </pre>
+ * 开发环境（{@code runClient}）永远复现不了这个——Spore 被反混淆回 {@code tick}，怎么写都对。
+ * {@code ProtoRaidMixin} 的两处 {@code tick} 是同一个坑，同批修掉。
+ *
+ * <p>判据：<b>方法名在生产环境会不会被重命名</b>。Spore 自己的方法（{@code summonMob}、
+ * {@code calculateAssimilation} 之类）→ {@code remap = false}；它覆写的<b>原版</b>方法
+ * （{@code tick}、{@code use}、{@code entityInside}…）→ 必须让它 remap。
  *
  * <p>另一条更省事的路是「多点孵化节拍被算出来那一步」，但整个加成必须落在
  * {@code RaidManager} 里（与其余 {@code adjust*} 保持一致，配置类只管存值）——
@@ -64,8 +80,7 @@ public abstract class WombRaidMixin {
             slice = @Slice(from = @At(value = "FIELD",
                     target = "Lcom/Harbinger/Spore/Core/SConfig$Server;recontructor_clock:Lnet/minecraftforge/common/ForgeConfigSpec$ConfigValue;")),
             at = @At(value = "INVOKE",
-                    target = "Lnet/minecraftforge/common/ForgeConfigSpec$ConfigValue;get()Ljava/lang/Object;"),
-            remap = false)
+                    target = "Lnet/minecraftforge/common/ForgeConfigSpec$ConfigValue;get()Ljava/lang/Object;"))
     private Object sporeAdd$fasterHatchClock(ForgeConfigSpec.ConfigValue<?> value) {
         return RaidManager.adjustWombClock((Integer) value.get());
     }

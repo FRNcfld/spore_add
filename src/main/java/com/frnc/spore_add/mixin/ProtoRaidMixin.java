@@ -38,9 +38,24 @@ import org.spongepowered.asm.mixin.injection.Slice;
  * 那段里只有第一个 200。这样不依赖"第几个 200"这种序号假设——
  * 序号会随 Spore 调整分支顺序而错位，而"在 generateCasing 之前"这个关系是语义上的。
  *
- * <h2>为什么全是 {@code remap = false}</h2>
- * 注入的 {@code eatBiomass} / {@code addBiomass} / {@code tick} 都是 <b>Spore 自己的</b>成员，
- * 生产环境不重命名，不该进 refmap。参见 {@code FungusColdMixin} 的类注释。
+ * <h2>哪几处要 {@code remap = false}、哪几处绝不能写</h2>
+ * 判据只有一条：<b>那个方法名在生产环境会不会被重命名。</b>
+ * <ul>
+ *   <li>{@code eatBiomass} / {@code addBiomass} 是 <b>Spore 自己的</b>方法，不重命名
+ *       → 必须 {@code remap = false}。开着 remap 反而要去找一个不存在的 searge 映射。</li>
+ *   <li>{@code tick} 是<b>原版 {@code Entity#tick} 的覆写</b>，生产环境会被重混淆成 {@code m_8119_}
+ *       → <b>绝不能写 {@code remap = false}</b>。写了的话 Mixin 就不查映射表、拿字面量
+ *       {@code tick} 去找目标，而生产 jar 里根本没有叫 {@code tick} 的方法，启动直接
+ *       {@code InvalidInjectionException: could not find any targets matching 'tick'}。
+ *       <b>本工程已经在整合包里踩过这个坑</b>，两个 mixin 一起把游戏崩在启动阶段。</li>
+ * </ul>
+ * 这个坑在开发环境<b>永远看不出来</b>——Spore 被反混淆回 {@code tick}，怎么写都对；
+ * 只有打成 jar 进整合包才会炸。所以"只跑过 runClient"不能算验证过 mixin。
+ *
+ * <p>至于 {@code @Slice} / {@code @At} 里那些指向 <b>Spore 成员</b>的 target
+ * （{@code Proto;generateCasing()} 之类）：开着 remap 也不会动它们——映射表里没有 Spore 的东西，
+ * 查不到就原样保留。refmap 里已有先例：{@code ScannerItemMixin.use} 被映射成
+ * {@code ScannerItem;m_7203_}（原版覆写），同一个 mixin 里其它指向 Spore 的引用原样不动。
  */
 @Mixin(Proto.class)
 public abstract class ProtoRaidMixin {
@@ -67,8 +82,7 @@ public abstract class ProtoRaidMixin {
             method = "tick",
             slice = @Slice(to = @At(value = "INVOKE",
                     target = "Lcom/Harbinger/Spore/Sentities/Organoids/Proto;generateCasing()V")),
-            constant = @Constant(intValue = 200),
-            remap = false)
+            constant = @Constant(intValue = 200))
     private int sporeAdd$fasterGrowth(int interval) {
         return RaidManager.adjustGrowthInterval(interval);
     }
@@ -93,8 +107,7 @@ public abstract class ProtoRaidMixin {
                             target = "Lcom/Harbinger/Spore/Sentities/Organoids/Proto;giveMadness(Lcom/Harbinger/Spore/Sentities/Organoids/Proto;)V"),
                     to = @At(value = "INVOKE",
                             target = "Lcom/Harbinger/Spore/Sentities/Organoids/Proto;summonMob(ILnet/minecraft/core/BlockPos;)V")),
-            constant = @Constant(intValue = 200),
-            remap = false)
+            constant = @Constant(intValue = 200))
     private int sporeAdd$fasterManufacture(int interval) {
         return RaidManager.adjustManufactureInterval(interval);
     }
